@@ -1,6 +1,7 @@
-# MachineTools
-Post processor and tool libraries for Fusion and Inventor CAM
-Made for the machines in the Lab as well as the workshop
+# Machine tools
+Posts, tool libraries and other resources for Fusion and Inventor CAM
+
+For usage with the CNCs in the workshop, as well as the lab
 
 Current machines:
 
@@ -9,3 +10,8 @@ Current machines:
 - Raptor X-SL
 
 - Roland monofab srm-20
+
+_____________________________
+Maintained by Benjamin Solar
+
+fablab.verkstad@hh.se
