@@ -633,7 +633,6 @@ Supported:
   -Stop
   -Opt stop
   -Dwell
-  -Tool break cntrl -> pause for tool check
   -Measure tool -> Pause for manual tool measure
   -Calibrate
   -Verify
@@ -648,73 +647,110 @@ Supported:
 
 */
 
+const toolMeasTag=["MEAS_1","MEAS_2","MEAS_3","MEAS_4","MEAS_5","MEAS_6","MEAS_7","MEAS_8","MEAS_9","MEAS_10","MEAS_ALL"];
+
+function manualToolMeas(toolNum)
+{
+  var toolH=0;
+  var tools=getToolTable();
+  var largeTool=false;
+  var largeToolOfs=0;
+
+  for(var i=0;i < tools.getNumberOfTools(); ++i)
+  {
+    var tool=tools.getTool(i);
+    if(tool.number==toolNum) 
+    {
+      toolH=tool.lengthOffset;
+      if(tool.diameter > 10) 
+      {
+        largeTool=true;
+        largeToolOfs=tool.diameter/2;
+      }
+
+      break;
+    }
+  }
+
+  writeComment("Tool "+ toolNum + " measure sequence - Block delete to skip - Press RESET to abort");
+  writeBlock("M109 P501 (T" + toolNum + " " + "H" + toolH + " Meas)"); //Non optional
+  writeBlock("M01"); //Optional stop
+
+  //Setup
+  writeOptionalBlock("T"+ toolNum +" M06");
+  writeOptionalBlock("G43 H" + toolH);
+  writeOptionalBlock("G90");
+  writeOptionalBlock("G00 G53 Z0.0");
+  if(largeTool) writeOptionalBlock("G59 G00 X" + largeToolOfs + ".0 Y0.0");
+  else writeOptionalBlock("G59 G00 X0.0 Y0.0");
+
+  //Plunging to measuring puck
+  writeOptionalBlock("G59 G01 Z50.0 F3000.0");
+  writeOptionalBlock("G59 G01 Z20.0 F500.0");
+  writeComment("Measure tool please!");
+  writeComment("H offset: " + toolH);
+  writeOptionalBlock("M00");
+  //TODO G10?
+
+  //Return
+  writeOptionalBlock("G53 G00 Z0.0");
+}
+
+function manualToolMeasAll()
+{
+  //TODO meas all
+}
+
 function onManualNC(command, value) {
   switch (command) {
   case COMMAND_COMMENT: //Write comment to gcode
-	writeComment(value);
+	  writeComment(value);
 	break;
   case COMMAND_STOP:
-	writeBlock("M00");
+	  writeBlock("M00");
 	break;
   case COMMAND_OPTIONAL_STOP:
-	writeBlock("M01");
+	  writeBlock("M01");
 	break;
   case COMMAND_TOOL_MEASURE: //Measure current tool
-	writeComment("Measure current tool");
-	writeBlock("PRINT\"Measuring current tool\"");
-	writeBlock("G79");
+	  writeComment("Measure current tool");
 	break;
+  case COMMAND_CALIBRATE:
+    writeComment("Calibrate!");
+  break;
   case COMMAND_VERIFY: //Verify the work area, tool breakage etc. 
-	writeComment("Verify");
-	writeBlock("G90 G53 G00 Z0.0");
-	writeBlock("ASKBOOL\"Verify work area\"");
+	  writeComment("Verify");
 	break;
   case COMMAND_CLEAN: //Clean the work area
-	writeComment("Clean");
-	writeBlock("G90 G53 G00 Z0.0");
-	writeBlock("G90 G53 G00 X1000.0 Y1000.0");
-	writeBlock("ASKBOOL\"Clean work area\"");
+	  writeComment("Clean");
 	break;
   case COMMAND_ACTION: //Action, use tag to select which
-	if(value=="MEAS_1") {writeComment("Measure tool 1"); writeBlock("PRINT\"Measuring T1\""); writeBlock("T1 M06"); writeBlock("G79");}
-	if(value=="MEAS_2") {writeComment("Measure tool 2"); writeBlock("PRINT\"Measuring T2\""); writeBlock("T2 M06"); writeBlock("G79");}
-	if(value=="MEAS_3") {writeComment("Measure tool 3"); writeBlock("PRINT\"Measuring T3\""); writeBlock("T3 M06"); writeBlock("G79");}
-	if(value=="MEAS_4") {writeComment("Measure tool 4"); writeBlock("PRINT\"Measuring T4\""); writeBlock("T4 M06"); writeBlock("G79");}
-	if(value=="MEAS_5") {writeComment("Measure tool 5"); writeBlock("PRINT\"Measuring T5\""); writeBlock("T5 M06"); writeBlock("G79");}
-	if(value=="MEAS_6") {writeComment("Measure tool 6"); writeBlock("PRINT\"Measuring T6\""); writeBlock("T6 M06"); writeBlock("G79");}
-	if(value=="MEAS_ALL") 
-	{
-		writeComment("Measure all tools in magazine");
-		writeBlock("PRINT\"Measuring all tools\"");
-		writeBlock("T1 M06");
-		writeBlock("G79");
-		writeBlock("T2 M06");
-		writeBlock("G79");
-		writeBlock("T3 M06");
-		writeBlock("G79");
-		writeBlock("T4 M06");
-		writeBlock("G79");
-		writeBlock("T5 M06");
-		writeBlock("G79");
-		writeBlock("T6 M06");
-		writeBlock("G79");
-	}
+    //Tag MEAS
+    for(var i=0;i <= 9;++i)
+    {
+      if(value==toolMeasTag[i]) manualToolMeas(i+1);
+    }
+    if(value==toolMeasTag[10]) manualToolMeasAll();
+
 	break;
   case COMMAND_PRINT_MESSAGE:
-	writeBlock("PRINT\"" + value + "\"");
+	  writeComment(value);
 	break;
   case COMMAND_DISPLAY_MESSAGE:
-    writeBlock("ASKBOOL\"" + value + "\"");
-    break;
+    writeComment(value);
+  break;
+  case COMMAND_ALARM:
+    writeComment("Alarm");
+  break;
   case COMMAND_ALERT:
-	writeBlock("ASKBOOL\"ALERT!\"");
+	  writeComment("Alert!");
 	break;
   case COMMAND_PASS_THROUGH:
-	var commands = String(value).split(",");
-	for (value in commands) 
-	{
-		writeBlock(commands[value]);
-	}
+    var commands = String(value).split(",");
+    for (value in commands) 
+    {
+      writeBlock(commands[value]);
+    }
 	break;
   }
 }
