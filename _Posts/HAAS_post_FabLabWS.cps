@@ -19,7 +19,7 @@ minimumRevision = 40783;
 
 longDescription = "Generic post for use with all common 3-axis HAAS mills like the DM, VF, Office Mill, and Mini Mill series. This post is for the pre-Next Generation Control. By default positioning moves will be output as high feed G1s instead of G0s. You can turn on the property 'useG0' to force G0s but be careful as the CNC will follow a dogleg path rather than a direct path.";
 
-extension = "nc";
+extension = "txt";
 programNameIsInteger = true;
 setCodePage("ascii");
 
@@ -67,7 +67,8 @@ properties = {
   useG95forTapping: false, // use IPR/MPR instead of IPM/MPM for tapping
   useG73Retract: false, // use G73 Q K format for accumulated depth support
   setting34: 1.0, // diameter used by control to calculate feed rates (INCH value)
-  useDPMFeeds: false // output DPM feeds instead of Inverse Time feeds
+  useDPMFeeds: false, // output DPM feeds instead of Inverse Time feeds
+  measSeqToolDiaLimit: 9 // Tool diameter limit before it is considered a big tool for auto measure sequence
 };
 
 propertyDefinitions = {
@@ -100,7 +101,8 @@ propertyDefinitions = {
   useG95forTapping: {title:"Use G95 for tapping", description:"use IPR/MPR instead of IPM/MPM for tapping", type:"boolean"},
   useG73Retract: {title:"G73 cycles include accumulated depth", description:"Use G73 Q K format for accumulated depth support.", type:"boolean"},
   setting34: {title:"Feed rate calculation diameter", description:"Defines the part diameter in inches that the control uses to calculate feed rates (Setting 34).", type:"spatial", range:[0.1, 9999.0]},
-  useDPMFeeds: {title:"Rotary moves use IPM feeds", description:"Enable to output IPM feeds, disable for Inverse Time feeds with rotary axes moves.", type:"boolean"}
+  useDPMFeeds: {title:"Rotary moves use IPM feeds", description:"Enable to output IPM feeds, disable for Inverse Time feeds with rotary axes moves.", type:"boolean"},
+  measSeqToolDiaLimit: {title:"Meas seq Tool Diameter Limit", description:"Tool diameter limit before it is considered a big tool for auto measure sequence", type:"integer"}
 };
 
 var singleLineCoolant = false; // specifies to output multiple coolant codes in one line rather than in separate lines
@@ -652,6 +654,8 @@ const toolMeasTag=["MEAS_1","MEAS_2","MEAS_3","MEAS_4","MEAS_5","MEAS_6","MEAS_7
 function manualToolMeas(toolNum)
 {
   var toolH=0;
+  var toolD=0;
+  var toolBL=0;
   var tools=getToolTable();
   var largeTool=false;
   var largeToolOfs=0;
@@ -662,30 +666,50 @@ function manualToolMeas(toolNum)
     if(tool.number==toolNum) 
     {
       toolH=tool.lengthOffset;
-      if(tool.diameter > 10) 
+      toolD=tool.diameter;
+      toolBL=tool.bodyLength;
+
+      if(tool.diameter > properties.measSeqToolDiaLimit) 
       {
-        largeTool=true;
-        largeToolOfs=tool.diameter/2;
+        if(tool.type != TOOL_DRILL && 
+           tool.type != TOOL_DRILL_CENTER &&
+           tool.type != TOOL_DRILL_SPOT &&
+           tool.type != TOOL_COUNTER_BORE &&
+           tool.type != TOOL_COUNTER_SINK &&
+           tool.type != TOOL_MILLING_END_BALL &&
+           tool.type != TOOL_MILLING_END_BULLNOSE &&
+           tool.type != TOOL_MILLING_LOLLIPOP &&
+           tool.type != TOOL_MILLING_TAPERED && 
+           tool.type != TOOL_PROBE &&
+           tool.type != TOOL_MILLING_FORM)
+          {
+            largeTool=true;
+            largeToolOfs=tool.diameter/2;
+          }
       }
 
       break;
     }
   }
 
-  writeComment("Tool "+ toolNum + " measure sequence - Block delete to skip - Press RESET to abort");
-  writeBlock("M109 P501 (T" + toolNum + " " + "H" + toolH + " Meas)"); //Non optional
+  writeComment("T" + toolNum + " " + "H" + toolH + " Meas seq.");
+  writeComment("Block delete to skip - Press RESET to abort");
+  writeComment("Diameter: " + toolD + "mm -" + " Body length: " + toolBL + "mm");
+
+  writeOptionalBlock("T"+ toolNum +" M06");
+
+  //writeOptionalBlock("M109 P501 (T" + toolNum + " " + "H" + toolH + " Meas)"); //Display msg
   writeBlock("M01"); //Optional stop
 
   //Setup
-  writeOptionalBlock("T"+ toolNum +" M06");
   writeOptionalBlock("G43 H" + toolH);
   writeOptionalBlock("G90");
   writeOptionalBlock("G00 G53 Z0.0");
-  if(largeTool) writeOptionalBlock("G59 G00 X" + largeToolOfs + ".0 Y0.0");
+  if(largeTool) writeOptionalBlock("G59 G00 X" + xyzFormat.format(largeToolOfs) + " Y0.0");
   else writeOptionalBlock("G59 G00 X0.0 Y0.0");
 
   //Plunging to measuring puck
-  writeOptionalBlock("G59 G01 Z50.0 F3000.0");
+  writeOptionalBlock("G59 G01 Z70.0 F3000.0");
   writeOptionalBlock("G59 G01 Z20.0 F500.0");
   writeComment("Measure tool please!");
   writeComment("H offset: " + toolH);
@@ -698,7 +722,15 @@ function manualToolMeas(toolNum)
 
 function manualToolMeasAll()
 {
-  //TODO meas all
+  writeComment("Manual tool measure - ALL");
+
+  var tools=getToolTable();
+
+  for(var i=0;i < tools.getNumberOfTools(); ++i)
+  {
+    var tool=tools.getTool(i);
+    manualToolMeas(tool.number);
+  }
 }
 
 function onManualNC(command, value) {

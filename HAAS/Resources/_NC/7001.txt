@@ -1,0 +1,180 @@
+%
+O07001 (MEAS_STD_10)
+(Using high feed G1 F5000. instead of G0.)
+(Machine)
+(  vendor: HAAS)
+(  model: Super mini mill)
+(  description: Mini Mill)
+(T1 D=63. CR=0. TAPER=43deg - ZMIN=0. - face mill)
+(T2 D=50. CR=0.4 - ZMIN=0. - face mill)
+(T3 D=14. CR=0. - ZMIN=0. - flat end mill)
+(T4 D=10. CR=0. - ZMIN=0. - flat end mill)
+(T5 D=6. CR=0. - ZMIN=0. - flat end mill)
+(T6 D=3. CR=0. - ZMIN=0. - flat end mill)
+(T7 D=8. CR=0. TAPER=45deg - ZMIN=0. - chamfer mill)
+(T8 D=14. CR=0. - ZMIN=0. - flat end mill)
+(T9 D=8. CR=0. TAPER=90deg - ZMIN=0. - spot drill)
+(T10 D=6. CR=0. TAPER=30deg - ZMIN=0. - chamfer mill)
+N10 G90 G94 G17
+N15 G21
+(Manual tool measure - ALL)
+(T1 H11 Meas seq.)
+(Block delete to skip - Press RESET to abort)
+(Diameter: 63mm - Body length: 40mm)
+/ N20 T1 M06
+N25 M01
+/ N30 G43 H11
+/ N35 G90
+/ N40 G00 G53 Z0.0
+/ N45 G59 G00 X31.5 Y0.0
+/ N50 G59 G01 Z70.0 F3000.0
+/ N55 G59 G01 Z20.0 F500.0
+(Measure tool please!)
+(H offset: 11)
+/ N60 M00
+/ N65 G53 G00 Z0.0
+(T2 H12 Meas seq.)
+(Block delete to skip - Press RESET to abort)
+(Diameter: 50mm - Body length: 40mm)
+/ N70 T2 M06
+N75 M01
+/ N80 G43 H12
+/ N85 G90
+/ N90 G00 G53 Z0.0
+/ N95 G59 G00 X25. Y0.0
+/ N100 G59 G01 Z70.0 F3000.0
+/ N105 G59 G01 Z20.0 F500.0
+(Measure tool please!)
+(H offset: 12)
+/ N110 M00
+/ N115 G53 G00 Z0.0
+(T3 H13 Meas seq.)
+(Block delete to skip - Press RESET to abort)
+(Diameter: 14mm - Body length: 76.2mm)
+/ N120 T3 M06
+N125 M01
+/ N130 G43 H13
+/ N135 G90
+/ N140 G00 G53 Z0.0
+/ N145 G59 G00 X7. Y0.0
+/ N150 G59 G01 Z70.0 F3000.0
+/ N155 G59 G01 Z20.0 F500.0
+(Measure tool please!)
+(H offset: 13)
+/ N160 M00
+/ N165 G53 G00 Z0.0
+(T4 H14 Meas seq.)
+(Block delete to skip - Press RESET to abort)
+(Diameter: 10mm - Body length: 59.4mm)
+/ N170 T4 M06
+N175 M01
+/ N180 G43 H14
+/ N185 G90
+/ N190 G00 G53 Z0.0
+/ N195 G59 G00 X5. Y0.0
+/ N200 G59 G01 Z70.0 F3000.0
+/ N205 G59 G01 Z20.0 F500.0
+(Measure tool please!)
+(H offset: 14)
+/ N210 M00
+/ N215 G53 G00 Z0.0
+(T5 H15 Meas seq.)
+(Block delete to skip - Press RESET to abort)
+(Diameter: 6mm - Body length: 43mm)
+/ N220 T5 M06
+N225 M01
+/ N230 G43 H15
+/ N235 G90
+/ N240 G00 G53 Z0.0
+/ N245 G59 G00 X0.0 Y0.0
+/ N250 G59 G01 Z70.0 F3000.0
+/ N255 G59 G01 Z20.0 F500.0
+(Measure tool please!)
+(H offset: 15)
+/ N260 M00
+/ N265 G53 G00 Z0.0
+(T6 H16 Meas seq.)
+(Block delete to skip - Press RESET to abort)
+(Diameter: 3mm - Body length: 17mm)
+/ N270 T6 M06
+N275 M01
+/ N280 G43 H16
+/ N285 G90
+/ N290 G00 G53 Z0.0
+/ N295 G59 G00 X0.0 Y0.0
+/ N300 G59 G01 Z70.0 F3000.0
+/ N305 G59 G01 Z20.0 F500.0
+(Measure tool please!)
+(H offset: 16)
+/ N310 M00
+/ N315 G53 G00 Z0.0
+(T7 H17 Meas seq.)
+(Block delete to skip - Press RESET to abort)
+(Diameter: 8mm - Body length: 30.5mm)
+/ N320 T7 M06
+N325 M01
+/ N330 G43 H17
+/ N335 G90
+/ N340 G00 G53 Z0.0
+/ N345 G59 G00 X0.0 Y0.0
+/ N350 G59 G01 Z70.0 F3000.0
+/ N355 G59 G01 Z20.0 F500.0
+(Measure tool please!)
+(H offset: 17)
+/ N360 M00
+/ N365 G53 G00 Z0.0
+(T8 H18 Meas seq.)
+(Block delete to skip - Press RESET to abort)
+(Diameter: 14mm - Body length: 65mm)
+/ N370 T8 M06
+N375 M01
+/ N380 G43 H18
+/ N385 G90
+/ N390 G00 G53 Z0.0
+/ N395 G59 G00 X7. Y0.0
+/ N400 G59 G01 Z70.0 F3000.0
+/ N405 G59 G01 Z20.0 F500.0
+(Measure tool please!)
+(H offset: 18)
+/ N410 M00
+/ N415 G53 G00 Z0.0
+(T9 H19 Meas seq.)
+(Block delete to skip - Press RESET to abort)
+(Diameter: 8mm - Body length: 39mm)
+/ N420 T9 M06
+N425 M01
+/ N430 G43 H19
+/ N435 G90
+/ N440 G00 G53 Z0.0
+/ N445 G59 G00 X0.0 Y0.0
+/ N450 G59 G01 Z70.0 F3000.0
+/ N455 G59 G01 Z20.0 F500.0
+(Measure tool please!)
+(H offset: 19)
+/ N460 M00
+/ N465 G53 G00 Z0.0
+(T10 H20 Meas seq.)
+(Block delete to skip - Press RESET to abort)
+(Diameter: 6mm - Body length: 20mm)
+/ N470 T10 M06
+N475 M01
+/ N480 G43 H20
+/ N485 G90
+/ N490 G00 G53 Z0.0
+/ N495 G59 G00 X0.0 Y0.0
+/ N500 G59 G01 Z70.0 F3000.0
+/ N505 G59 G01 Z20.0 F500.0
+(Measure tool please!)
+(H offset: 20)
+/ N510 M00
+/ N515 G53 G00 Z0.0
+N520 G53 G0 Z0.
+
+N3815 M5
+N3820 M9
+N3825 G53 G0 Z0.
+N3830 X50.
+N3835 G53 G0 Y0.
+N3840 M30
+
+%
