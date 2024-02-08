@@ -489,6 +489,7 @@ function onOpen() {
       for (var i = 0; i < tools.getNumberOfTools(); ++i) {
         var tool = tools.getTool(i);
         var comment = "T" + toolFormat.format(tool.number) + " " +
+          "H" + toolFormat.format(tool.lengthOffset) + " " +
           "D=" + xyzFormat.format(tool.diameter) + " " +
           localize("CR") + "=" + xyzFormat.format(tool.cornerRadius);
         if ((tool.taperAngle > 0) && (tool.taperAngle < Math.PI)) {
@@ -733,6 +734,57 @@ function manualToolMeasAll()
   }
 }
 
+function engraveText(xVal, yVal, zVal, chrHeight, textValue, tNum, hNum, cutFeed)
+{
+  tNum=10;
+  hNum=20;
+  cutFeed=300; 
+  var xPos=Number(xVal);
+  var yPos=Number(yVal);
+  var zDepth=Number(zVal);
+  var cH=Number(chrHeight);
+
+  //Setup
+  writeComment("Engrave NC START!");
+
+  writeBlock("T"+tNum+" M06");
+  writeBlock("G43 H"+hNum);
+  writeBlock("M03 S10000");
+  writeBlock("M08");
+  writeBlock("G90 G53 G00 Z0.0");
+  writeBlock("G54 G00 "+ "X" + xyzFormat.format(xPos) + " " + "Y" + xyzFormat.format(yPos));
+  writeBlock("G54 G01 Z20.0 F1500.0");
+
+  writeBlock("G17 G90");
+  writeBlock("G47 P0 " + "X" + xyzFormat.format(xPos) + " " + "Y" + xyzFormat.format(yPos) + " I0 J" + xyzFormat.format(cH) + " R2.0 " + "Z" + zDepth + " E100.0 F" + xyzFormat.format(cutFeed) + " " + "(" + textValue + ")");
+  
+  writeBlock("G90 G53 G00 Z0.0");
+
+  writeBlock("M01");
+  writeComment("Engrave NC END!")
+}
+
+/* TODO : finish!
+function engraveTextMLine(xVal, yVal, zVal, chrHeight, engraveText, tNum, hNum, cutFeed)
+{
+  tNum=10;
+  hNum=20;
+  cutFeed=300; 
+  var xPos=Number(xVal);
+  var yPos=Number(yVal);
+  var zDepth=Number(zVal);
+  var cH=Number(chrHeight);
+  
+  writeComment("M-NC MLine Engrave:");
+  for(let i=0; i<= (engraveText.length)-1; i++) writeComment(engraveText[i]);
+
+  for(let i=0; i<= (engraveText.length)-1; i++)
+  {
+    writeBlock("G47 P0 " + "X" + xyzFormat.format(xPos) + " " + "Y" + xyzFormat.format(yPos) + " I0 J" + xyzFormat.format(cH) + " R2.0 " + "Z" + zDepth + " E100.0 F" + xyzFormat.format(cutFeed) + " " + "(" + engraveText[i] + ")"); 
+  }
+}
+*/
+
 function onManualNC(command, value) {
   switch (command) {
   case COMMAND_COMMENT: //Write comment to gcode
@@ -763,6 +815,31 @@ function onManualNC(command, value) {
       if(value==toolMeasTag[i]) manualToolMeas(i+1);
     }
     if(value==toolMeasTag[10]) manualToolMeasAll();
+
+    //Tag ENGR
+    var cmd=String(value).split("_");
+    if(cmd[0]=="ENGR")
+    {
+      //ENGR_5,5,-0.1,4,text!
+      val=String(cmd[1]).split(",");
+      engraveText(val[0],val[1],val[2],val[3],val[4]);
+    }
+
+    /* TODO : finish!
+    //Tag ENGRM
+    var cmd=String(value).split("_");
+    if(cmd[0]=="ENGRM")
+    {
+      //ENGRM_5,5,-0.3,4,text1,text2,text3
+      var param=String(cmd[1]).split(",");
+      var inText=[];
+      for(let i=0; param[4+i]!=null; i++)
+      {
+        inText.push(param[4+i]);
+      }
+      engraveTextMLine(param[0],param[1],param[2],param[3],inText);
+    }
+    */
 
 	break;
   case COMMAND_PRINT_MESSAGE:

@@ -47,7 +47,7 @@ properties = {
   sequenceNumberIncrement: 5, // increment for sequence numbers
   optionalStop: false, // optional stop
   separateWordsWithSpace: true, // specifies that the words should be separated with a white space
-  zRetract: 20 // the z position for retracting tool G28 not possible
+  zRetract: 0 // the z position for retracting tool G28 not possible
 };
 
 var numberOfToolSlots = 9999;
@@ -220,6 +220,14 @@ function onOpen() {
   }
 }
 
+function getWOFS()
+{
+  var fSec=getSection(0);
+  var fwofs=fSec.workOffset;
+  if(fwofs==0) fwofs=1;
+  return gFormat.format(53+fwofs);
+}
+
 function onComment(message) {
   writeComment(message);
 }
@@ -227,70 +235,72 @@ function onComment(message) {
 function onManualNC(command, value) {
   switch (command) {
   case COMMAND_COMMENT: //Write comment to gcode
-	writeComment(value);
+	  writeComment(value);
 	break;
   case COMMAND_STOP:
-	writeBlock("M00");
+	  writeBlock("M00");
 	break;
   case COMMAND_OPTIONAL_STOP:
-	writeBlock("M01");
+	  writeBlock("M01");
 	break;
   case COMMAND_TOOL_MEASURE: //Measure current tool
-	writeComment("Measure current tool");
-	writeBlock("PRINT\"Measuring current tool\"");
-	writeBlock("G79");
+    writeComment("Measure current tool");
+    writeBlock("PRINT\"Measuring current tool\"");
+    writeBlock("G79");
 	break;
   case COMMAND_VERIFY: //Verify the work area, tool breakage etc. 
-	writeComment("Verify");
-	writeBlock("G90 G53 G00 Z0.0");
-	writeBlock("ASKBOOL\"Verify work area\"");
+    writeComment("Verify");
+    writeBlock("G90 G53 G00 Z0.0");
+    writeBlock("ASKBOOL\"Verify work area\"");
+    writeBlock(getWOFS()); //Set the wcs back after manual-nc
 	break;
   case COMMAND_CLEAN: //Clean the work area
-	writeComment("Clean");
-	writeBlock("G90 G53 G00 Z0.0");
-	writeBlock("G90 G53 G00 X1000.0 Y1000.0");
-	writeBlock("ASKBOOL\"Clean work area\"");
+    writeComment("Clean");
+    writeBlock("G90 G53 G00 Z0.0");
+    writeBlock("G90 G53 G00 X1000.0 Y1000.0");
+    writeBlock("ASKBOOL\"Clean work area\"");
+    writeBlock(getWOFS()); //Set the wcs back after manual-nc
 	break;
   case COMMAND_ACTION: //Action, use tag to select which
-	if(value=="MEAS_1") {writeComment("Measure tool 1"); writeBlock("PRINT\"Measuring T1\""); writeBlock("T1 M06"); writeBlock("G79");}
-	if(value=="MEAS_2") {writeComment("Measure tool 2"); writeBlock("PRINT\"Measuring T2\""); writeBlock("T2 M06"); writeBlock("G79");}
-	if(value=="MEAS_3") {writeComment("Measure tool 3"); writeBlock("PRINT\"Measuring T3\""); writeBlock("T3 M06"); writeBlock("G79");}
-	if(value=="MEAS_4") {writeComment("Measure tool 4"); writeBlock("PRINT\"Measuring T4\""); writeBlock("T4 M06"); writeBlock("G79");}
-	if(value=="MEAS_5") {writeComment("Measure tool 5"); writeBlock("PRINT\"Measuring T5\""); writeBlock("T5 M06"); writeBlock("G79");}
-	if(value=="MEAS_6") {writeComment("Measure tool 6"); writeBlock("PRINT\"Measuring T6\""); writeBlock("T6 M06"); writeBlock("G79");}
-	if(value=="MEAS_ALL") 
-	{
-		writeComment("Measure all tools in magazine");
-		writeBlock("PRINT\"Measuring all tools\"");
-		writeBlock("T1 M06");
-		writeBlock("G79");
-		writeBlock("T2 M06");
-		writeBlock("G79");
-		writeBlock("T3 M06");
-		writeBlock("G79");
-		writeBlock("T4 M06");
-		writeBlock("G79");
-		writeBlock("T5 M06");
-		writeBlock("G79");
-		writeBlock("T6 M06");
-		writeBlock("G79");
+    if(value=="MEAS_1") {writeComment("Measure tool 1"); writeBlock("PRINT\"Measuring T1\""); writeBlock("T1 M06"); writeBlock("G79");}
+    if(value=="MEAS_2") {writeComment("Measure tool 2"); writeBlock("PRINT\"Measuring T2\""); writeBlock("T2 M06"); writeBlock("G79");}
+    if(value=="MEAS_3") {writeComment("Measure tool 3"); writeBlock("PRINT\"Measuring T3\""); writeBlock("T3 M06"); writeBlock("G79");}
+    if(value=="MEAS_4") {writeComment("Measure tool 4"); writeBlock("PRINT\"Measuring T4\""); writeBlock("T4 M06"); writeBlock("G79");}
+    if(value=="MEAS_5") {writeComment("Measure tool 5"); writeBlock("PRINT\"Measuring T5\""); writeBlock("T5 M06"); writeBlock("G79");}
+    if(value=="MEAS_6") {writeComment("Measure tool 6"); writeBlock("PRINT\"Measuring T6\""); writeBlock("T6 M06"); writeBlock("G79");}
+    if(value=="MEAS_ALL") 
+    {
+      writeComment("Measure all tools in magazine");
+      writeBlock("PRINT\"Measuring all tools\"");
+      writeBlock("T1 M06");
+      writeBlock("G79");
+      writeBlock("T2 M06");
+      writeBlock("G79");
+      writeBlock("T3 M06");
+      writeBlock("G79");
+      writeBlock("T4 M06");
+      writeBlock("G79");
+      writeBlock("T5 M06");
+      writeBlock("G79");
+      writeBlock("T6 M06");
+      writeBlock("G79");
 	}
 	break;
   case COMMAND_PRINT_MESSAGE:
-	writeBlock("PRINT\"" + value + "\"");
+	  writeBlock("PRINT\"" + value + "\"");
 	break;
   case COMMAND_DISPLAY_MESSAGE:
     writeBlock("ASKBOOL\"" + value + "\"");
-    break;
+  break;
   case COMMAND_ALERT:
-	writeBlock("ASKBOOL\"ALERT!\"");
+	  writeBlock("ASKBOOL\"ALERT!\"");
 	break;
   case COMMAND_PASS_THROUGH:
-	var commands = String(value).split(",");
-	for (value in commands) 
-	{
-		writeBlock(commands[value]);
-	}
+    var commands = String(value).split(",");
+    for (value in commands) 
+    {
+      writeBlock(commands[value]);
+    }
 	break;
   }
 }
@@ -424,7 +434,9 @@ function onSection() {
 
     // retract to safe plane
     retracted = true;
-    writeBlock(gMotionModal.format(0), "Z" + xyzFormat.format(properties.zRetract)); // retract
+    //TODO add to change log
+    writeBlock("G90 G53 " + gMotionModal.format(0), "Z" + xyzFormat.format(properties.zRetract)); // retract
+    writeBlock(getWOFS()); //Reset wcs after G53 | TODO : a better way?
     zOutput.reset();
   }
 
@@ -871,6 +883,9 @@ function onCommand(command) {
 
 function onSectionEnd() {
   writeBlock(gPlaneModal.format(17));
+  //TODO : Add to change log
+  writeBlock("G90 G53 G00 Z0.0"); //Retract Z
+  writeBlock(getWOFS()); //Reset wcs after G53 | TODO : a better way?
   forceAny();
 }
 
@@ -882,6 +897,11 @@ function onClose() {
 
   setWorkPlane(new Vector(0, 0, 0)); // reset working plane
 
+  //TODO Add to change log
+  writeBlock("G90 G53 G00 Z0.0"); //Retract Z
+  writeBlock("G28"); //Go to park pos
+  
+  /*
   if (!machineConfiguration.hasHomePositionX() && !machineConfiguration.hasHomePositionY()) {
   //  writeBlock(gFormat.format(28), gAbsIncModal.format(91), "X" + xyzFormat.format(0), "Y" + xyzFormat.format(0)); // return to home
   } else {
@@ -895,6 +915,7 @@ function onClose() {
     }
     writeBlock(gAbsIncModal.format(90), gFormat.format(53), gMotionModal.format(0), homeX, homeY);
   }
+  */
 
   onImpliedCommand(COMMAND_END);
   onImpliedCommand(COMMAND_STOP_SPINDLE);

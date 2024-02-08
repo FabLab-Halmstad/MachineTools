@@ -1,0 +1,9 @@
+TODO:
+	HAAS:
+	-Finish engrave single and multi line
+	-Finish CLEAN etc
+	-Beta test tool measure
+
+	RAPTOR:
+	-Add options to turn off full zretract
+	-Beta test wcs change
