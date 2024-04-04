@@ -1,5 +1,10 @@
 # Machine tools
-Posts, tool libraries and other resources for Fusion and Inventor CAM
+HSMWorks posts, tool libraries and other resources
+
+Support:
+    Fusion CAM
+    Inventor CAM
+    HSMWorks for SolidWorks
 
 For usage with the CNCs in the workshop, as well as the lab
 
