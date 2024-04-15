@@ -78,7 +78,7 @@ properties=
     }
 };
 
-var xyzFormat = createFormat({decimals:2});
+var xyzFormat = createFormat({decimals:5, forceDecimal:true});
 var feedFormat = createFormat({decimals:(unit == MM ? 3 : 5)});
 var toolFormat = createFormat({decimals:0});
 var rpmFormat = createFormat({decimals:0});
@@ -252,6 +252,22 @@ function formatWorkOfs(workOfs)
     return workOfsStr;
 }
 
+function formatSetupDim(data)
+{
+    var zPadding=2;
+    var fData=xyzFormat.format(data); //Round off
+
+    //Add trailing zeros
+    var dec=(fData.length)-(fData.indexOf(".")+1)
+    if(dec < zPadding) 
+    {
+        dec=zPadding-dec;
+        for(var i=0; i < dec;++i) fData+="0";
+    }
+
+    return fData;
+}
+
 function getJobTime()
 {
     var totalJobTime=0;
@@ -349,14 +365,14 @@ function onSectionEnd() //On end of section
 
                         divS("setupInfoMatContCont");
                             divS("setupInfoMatCont");
-                                divSE("setupInfoMatBlock","X: " + xyzFormat.format(stockDim.x));
-                                divSE("setupInfoMatBlock","Y: " + xyzFormat.format(stockDim.y));
-                                divSE("setupInfoMatBlock","Z: " + xyzFormat.format(stockDim.z));
+                                divSE("setupInfoMatBlock","X: " + formatSetupDim(stockDim.x));
+                                divSE("setupInfoMatBlock","Y: " + formatSetupDim(stockDim.y));
+                                divSE("setupInfoMatBlock","Z: " + formatSetupDim(stockDim.z));
                             divE();
                             divS("setupInfoMatCont");
-                                divSE("setupInfoMatBlock","X: " + xyzFormat.format(partDim.x));
-                                divSE("setupInfoMatBlock","Y: " + xyzFormat.format(partDim.y));
-                                divSE("setupInfoMatBlock","Z: " + xyzFormat.format(partDim.z));
+                                divSE("setupInfoMatBlock","X: " + formatSetupDim(partDim.x));
+                                divSE("setupInfoMatBlock","Y: " + formatSetupDim(partDim.y));
+                                divSE("setupInfoMatBlock","Z: " + formatSetupDim(partDim.z));
                             divE();
                         divE();
 
