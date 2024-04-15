@@ -78,7 +78,7 @@ properties=
     }
 };
 
-var xyzFormat = createFormat({decimals:(unit == MM ? 3 : 4)});
+var xyzFormat = createFormat({decimals:2});
 var feedFormat = createFormat({decimals:(unit == MM ? 3 : 5)});
 var toolFormat = createFormat({decimals:0});
 var rpmFormat = createFormat({decimals:0});
@@ -86,7 +86,7 @@ var secFormat = createFormat({decimals:3});
 var angleFormat = createFormat({decimals:0, scale:DEG});
 var degFormat = createFormat({decimals:0});
 var pitchFormat = createFormat({decimals:3});
-var spatialFormat = createFormat({decimals:(unit == MM ? 2 : 3)});
+var spatialFormat = createFormat({decimals:2});
 var percentageFormat = createFormat({decimals:1, scale:100});
 var timeFormat = createFormat({decimals:2});
 var taperFormat = angleFormat; // share format
@@ -127,12 +127,12 @@ function htmlEnd()
     "</html> \n");
 }
 
-function divS(dClass, dText, dStyle) //div start
+function divS(dClass, dStyle) //div start
 {
     write("<div class=\"" + dClass + "\"");
-    if(typeof dStyle !== undefined) write("style=\"" + dStyle + "\"");
-    if(typeof dText !== undefined) write(dText);
-    write("\n");
+    if(typeof dStyle !== "undefined") write(" style=\"" + dStyle + "\"");
+    
+    writeln(">");
 }
 
 function divE() //div end
@@ -143,8 +143,10 @@ function divE() //div end
 function divSE(dClass, dText, dStyle) //div start and end
 {
     write("<div class=\"" + dClass + "\"");
-    if(typeof dStyle !== undefined) write("style=\"" + dStyle + "\"");
-    if(typeof dText !== undefined) write(dText);
+    if(typeof dStyle !== "undefined") write(" style=\"" + dStyle + "\">");
+    else write(">");
+    if(typeof dText !== "undefined") write(dText);
+
     writeln("</div>");
 }
 
@@ -178,7 +180,7 @@ function modelImg() //Insert model image
     imgSrc=getImageAsImgSrc(path);
     FileSystem.remove(path);
 
-    writeln("<img src=\"" + imgSrc + "\" alt=\"Model image\" width=\"50%\"/>");
+    writeln("<img src=\"" + imgSrc + "\" alt=\"Model image\" style=\"height:230px;\"/>");
 }
 
 function tableS(tClass, tStyle) //Table start
@@ -238,6 +240,16 @@ function formatCycleTime(cycleTime)
     } else {
       return subst(localize("%1s"), seconds);
     }
+}
+
+function formatWorkOfs(workOfs)
+{
+    //WCS starts at 1 -> G54, 2 -> G55 etc. 
+    if(workOfs==0) workOfs+=1; //If set to default
+    workOfs+=53;
+    var workOfsStr="G" + workOfs;
+
+    return workOfsStr;
 }
 
 function getJobTime()
@@ -322,6 +334,48 @@ function onSectionEnd() //On end of section
         var upper = new Vector(getParameter("part-upper-x"), getParameter("part-upper-y"), getParameter("part-upper-z"));
         var partDim=Vector.diff(upper, lower);
         var cWorkOfs=currentSection.workOffset;
+
+        //Setup info
+        if(getProperty("showSetup"))
+        {
+            divS("contentContainer");
+                divSE("contentHeader","SETUP");
+                divS("setupInfoContainer");
+                    divS("setupInfo");
+                        divS("setupInfoMatHeadCont");
+                            divSE("setupInfoMatHead","STOCK");
+                            divSE("setupInfoMatHead","PART");
+                        divE();
+
+                        divS("setupInfoMatContCont");
+                            divS("setupInfoMatCont");
+                                divSE("setupInfoMatBlock","X: " + xyzFormat.format(stockDim.x));
+                                divSE("setupInfoMatBlock","Y: " + xyzFormat.format(stockDim.y));
+                                divSE("setupInfoMatBlock","Z: " + xyzFormat.format(stockDim.z));
+                            divE();
+                            divS("setupInfoMatCont");
+                                divSE("setupInfoMatBlock","X: " + xyzFormat.format(partDim.x));
+                                divSE("setupInfoMatBlock","Y: " + xyzFormat.format(partDim.y));
+                                divSE("setupInfoMatBlock","Z: " + xyzFormat.format(partDim.z));
+                            divE();
+                        divE();
+
+                        divS("setupInfoWCSCont");
+                            divSE("setupInfoWCS","Work offset: " + formatWorkOfs(cWorkOfs));
+                        divE();
+
+                        divSE("setupInfoMatHead","SETUP NOTES");
+                        divS("setupInfoNotes");
+                            writeln("OP1 PRL38 <br/>");
+                            writeln("OP1 PRL38 <br/>");
+                            writeln("OP1 PRL38 <br/>");
+                            writeln("OP1 PRL38 <br/>");
+                        divE();
+                    divE();
+                    modelImg();
+                divE();
+            divE();
+        }
 
         writeToolTable();
     }
