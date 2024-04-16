@@ -45,7 +45,7 @@ properties=
         value : true,
         scope : "post"
     },
-    showSetup:
+    writeSetup:
     {
         title : "Show setup info",
         description : "Show setup information for OP",
@@ -53,7 +53,7 @@ properties=
         value : true,
         scope : "post"
     },
-    showTools:
+    writeTools:
     {
         title : "Show tools",
         description : "Show list of tools for OP",
@@ -61,7 +61,7 @@ properties=
         value : true,
         scope : "post"
     },
-    showPaths:
+    writePaths:
     {
         title : "Show toolpaths",
         description : "Show list of toolpaths for OP",
@@ -285,14 +285,88 @@ function getJobTime()
     return totalJobTime;
 }
 
-function writeToolTable() //Write html tool table
+function printNotes()
 {
+    //Check if op has notes
+    if(hasParameter("job-notes"))
+    {
+        var opNotes=getParameter("job-notes");
+        const splitOpNotes=opNotes.split("\n"); //Split on newline
+        aLen=splitOpNotes.length;
+        for(var i=0;i<aLen;++i) writeln(splitOpNotes[i] + "<br/>"); //Add line breaks
 
+        return true;
+    }
+    else return false;
 }
 
-function writePathTable() //Write html toolpath table
+function writeToolTable() //Write html tool table
 {
+    divS("contentContainer","border:none;");
+        divSE("contentHeader","TOOLS","border: 1px solid black; border-bottom:none;");
+        tableS("toolTable");
+            tableRowS();
+                tableHead("Type");
+                tableHead("Type");
+                tableHead("Type");
+                tableHead("Type");
+                tableHead("Type");
+                tableHead("Type");
+                tableHead("Type");
+                tableHead("Type");
+                tableHead("Type");
+            tableRowE();
+            tableRowS();
+                tableCell("cell");
+                tableCell("cell");
+                tableCell("cell");
+                tableCell("cell");
+                tableCell("cell");
+                tableCell("cell");
+                tableCell("cell");
+                tableCell("cell");
+                tableCell("cell");
+            tableRowE();
+        tableE();
+    divE();
+}
 
+function writePathTableHead() //Write html toolpath table
+{
+    divS("contentContainer","border:none;");
+        divSE("contentHeader","TOOLPATHS","border: 1px solid black; border-bottom:none;");
+        tableS("pathTable");
+            tableRowS();
+                tableHead("Type");
+                tableHead("T");
+                tableHead("H");
+                tableHead("Diameter");
+                tableHead("NoF");
+                tableHead("Desc.");
+                tableHead("Cmt");
+                tableHead("BL");
+                tableHead("Vendor");
+                tableHead("ID");
+            tableRowE();
+                var tools=getToolTable();
+                for(var i=0;i<tools.getNumberOfTools();++i)
+                {
+                    tableRowS();
+                        var tool=tools.getTool(i);
+                        tableCell(tool.number);
+                        tableCell(tool.diameter);
+                        tableCell("H");
+                        tableCell("Diameter");
+                        tableCell("NoF");
+                        tableCell("Desc.");
+                        tableCell("Cmt");
+                        tableCell("BL");
+                        tableCell("Vendor");
+                        tableCell("ID");
+                    tableRowE();
+                }
+        tableE();
+    divE();
 }
 
 function onOpen() //On init of post
@@ -352,7 +426,7 @@ function onSectionEnd() //On end of section
         var cWorkOfs=currentSection.workOffset;
 
         //Setup info
-        if(getProperty("showSetup"))
+        if(getProperty("writeSetup"))
         {
             divS("contentContainer");
                 divSE("contentHeader","SETUP");
@@ -382,20 +456,17 @@ function onSectionEnd() //On end of section
 
                         divSE("setupInfoMatHead","SETUP NOTES");
                         divS("setupInfoNotes");
-                            writeln("OP1 PRL38 <br/>");
-                            writeln("OP1 PRL38 <br/>");
-                            writeln("OP1 PRL38 <br/>");
-                            writeln("OP1 PRL38 <br/>");
+                            printNotes(); //Print OP notes
                         divE();
                     divE();
-                    modelImg();
+                    modelImg(); //Display setup image
                 divE();
             divE();
         }
 
-        writeToolTable();
+        if(getProperty("writeTools")) writeToolTable();
+        if(getProperty("writePaths")) writePathTableHead();
     }
-    writePathTable();
 }
 
 function onClose() //On close of post
