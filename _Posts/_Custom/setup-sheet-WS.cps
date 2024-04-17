@@ -9,6 +9,7 @@
  * TODO:
  * Pattern support - cached
  * Manual nc support - cached
+ * Support for tools with the same T number?
  */
 
 description="WS Setup-sheet";
@@ -268,6 +269,33 @@ function formatSetupDim(data)
     return fData;
 }
 
+function getCoolantDescription(coolant) 
+{
+    switch (coolant) 
+    {
+        case COOLANT_OFF:
+            return ("Off");
+        case COOLANT_FLOOD:
+            return ("Flood");
+        case COOLANT_MIST:
+            return ("Mist");
+        case COOLANT_THROUGH_TOOL:
+            return ("Through tool");
+        case COOLANT_AIR:
+            return ("Air");
+        case COOLANT_AIR_THROUGH_TOOL:
+            return ("Air through tool");
+        case COOLANT_SUCTION:
+            return ("Suction");
+        case COOLANT_FLOOD_MIST:
+            return ("Flood and mist");
+        case COOLANT_FLOOD_THROUGH_TOOL:
+            return ("Flood and through tool");
+        default:
+            return ("Unknown");
+    }
+}
+
 function getJobTime()
 {
     var totalJobTime=0;
@@ -307,37 +335,6 @@ function writeToolTable() //Write html tool table
         tableS("toolTable");
             tableRowS();
                 tableHead("Type");
-                tableHead("Type");
-                tableHead("Type");
-                tableHead("Type");
-                tableHead("Type");
-                tableHead("Type");
-                tableHead("Type");
-                tableHead("Type");
-                tableHead("Type");
-            tableRowE();
-            tableRowS();
-                tableCell("cell");
-                tableCell("cell");
-                tableCell("cell");
-                tableCell("cell");
-                tableCell("cell");
-                tableCell("cell");
-                tableCell("cell");
-                tableCell("cell");
-                tableCell("cell");
-            tableRowE();
-        tableE();
-    divE();
-}
-
-function writePathTableHead() //Write html toolpath table
-{
-    divS("contentContainer","border:none;");
-        divSE("contentHeader","TOOLPATHS","border: 1px solid black; border-bottom:none;");
-        tableS("pathTable");
-            tableRowS();
-                tableHead("Type");
                 tableHead("T");
                 tableHead("H");
                 tableHead("Diameter");
@@ -348,25 +345,42 @@ function writePathTableHead() //Write html toolpath table
                 tableHead("Vendor");
                 tableHead("ID");
             tableRowE();
-                var tools=getToolTable();
-                for(var i=0;i<tools.getNumberOfTools();++i)
-                {
-                    tableRowS();
-                        var tool=tools.getTool(i);
-                        tableCell(tool.number);
-                        tableCell(tool.diameter);
-                        tableCell("H");
-                        tableCell("Diameter");
-                        tableCell("NoF");
-                        tableCell("Desc.");
-                        tableCell("Cmt");
-                        tableCell("BL");
-                        tableCell("Vendor");
-                        tableCell("ID");
-                    tableRowE();
-                }
+            var tools=getToolTable();
+            for(var i=0;i<tools.getNumberOfTools();++i)
+            {
+                tableRowS();
+                    var tool=tools.getTool(i);
+                    tableCell(getToolTypeName(tool.type)); //1
+                    tableCell("T" + tool.number);          //2
+                    tableCell("H" + tool.lengthOffset);    //3
+                    tableCell(tool.diameter);              //4
+                    tableCell(tool.numberOfFlutes);        //5
+                    tableCell(tool.description);           //6
+                    tableCell(tool.comment);               //7
+                    tableCell(tool.bodyLength);            //8
+                    tableCell(tool.vendor);                //9
+                    tableCell(tool.productId);             //10
+                tableRowE();
+            }
         tableE();
     divE();
+}
+
+function writePathTableHead() //Write html toolpath table
+{
+    divS("contentContainer","border:none;");
+        divSE("contentHeader","TOOLPATHS","border: 1px solid black; border-bottom:none;");
+        tableS("pathTable");
+            tableRowS();
+                tableHead("Strategy");
+                tableHead("Tool");
+                tableHead("Tool type");
+                tableHead("Coolant");
+                tableHead("Cycle time");
+                tableHead("RPM");
+                tableHead("Feedrate");
+                tableHead("fz");
+            tableRowE();
 }
 
 function onOpen() //On init of post
@@ -456,6 +470,7 @@ function onSectionEnd() //On end of section
 
                         divSE("setupInfoMatHead","SETUP NOTES");
                         divS("setupInfoNotes");
+                            writeln("All units are metric. <br/>");
                             printNotes(); //Print OP notes
                         divE();
                     divE();
@@ -464,13 +479,41 @@ function onSectionEnd() //On end of section
             divE();
         }
 
-        if(getProperty("writeTools")) writeToolTable();
-        if(getProperty("writePaths")) writePathTableHead();
+        if(getProperty("writeTools")) writeToolTable(); //Write tools
+        if(getProperty("writePaths")) writePathTableHead(); //Write path table header
+    }
+    if(getProperty("writePaths"))
+    {
+        var pathId=currentSection.getId();
+        var descr=getParameter("operation-strategy");
+        var cmt=getParameter("operation-comment");
+        var cTool=currentSection.getTool();
+        var cycleT=currentSection.getCycleTime();
+        var spindleSpd=currentSection.getMaximumSpindleSpeed();
+        var maxFeedrate=currentSection.getMaximumFeedrate();
+        var feedPerT=maxFeedrate/(spindleSpd*cTool.numberOfFlutes); //Feed per tooth calc
+
+        tableRowS();
+            tableCell(cmt);
+            tableCell("T" + cTool.number);
+            tableCell(getToolTypeName(cTool.type));
+            tableCell(getCoolantDescription(cTool.coolant));
+            tableCell(formatCycleTime(cycleT));
+            tableCell(rpmFormat.format(spindleSpd));
+            tableCell(feedFormat.format(maxFeedrate));
+            tableCell(feedFormat.format(feedPerT));
+        tableRowE();
     }
 }
 
 function onClose() //On close of post
 {
+    //Close up path table
+    tableE();
+    divE();
+
+    //Generated by:
+
     htmlEnd();
 }
 
