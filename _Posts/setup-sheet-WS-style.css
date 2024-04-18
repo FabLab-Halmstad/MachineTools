@@ -27,6 +27,10 @@ body {
     -moz-box-sizing: border-box;
   }
   .main-page {
+    display:flex;
+    flex-direction:column;
+    flex-grow: 1;
+
     width: 210mm;
     min-height: 297mm;
     margin: 10mm auto;
@@ -262,4 +266,24 @@ body {
 
     width:100%;
     height:100%;
+  }
+
+  .footerCont
+  {
+    display:flex;
+    flex-direction: column;
+    justify-content: end;
+    flex-grow: 1;
+
+    height:100%;
+    width:100%;
+  }
+
+  .camSysFooter
+  {
+    font-family: var(--font1);
+    font-size: var(--fontSizeBody1);
+    font-weight:normal;
+    text-align:center;
+    padding:10px;
   }

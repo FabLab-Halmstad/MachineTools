@@ -9,7 +9,9 @@
  * TODO:
  * Pattern support - cached
  * Manual nc support - cached
- * Support for tools with the same T number?
+ * writeToolsAll - BETA
+ * Hightlight tools with the same T number
+ * TOOL B - layout - show tools with feed and speed
  */
 
 description="WS Setup-sheet";
@@ -70,6 +72,14 @@ properties=
         value : true,
         scope : "post"
     },
+    hideDuplicates:
+    {
+        title : "Hide duplicates",
+        description : "Hide duplicated tools",
+        type : "boolean",
+        value : true,
+        scope : "post"
+    },
     rapidFeed: {
         title      : "Rapid feed",
         description: "Sets the rapid traversal feedrate. Set this to get more accurate cycle times.",
@@ -102,31 +112,6 @@ var supportedImageTypes =
     "tif" : "image/tiff",
     "tiff": "image/tiff"
 };
-
-function htmlSetup()
-{
-    write(
-    "<!DOCTYPE html> \n" +
-    "<html> \n" +
-    " <head> \n" +
-    "<style type=\"text/css\"> \n" +
-    loadText("setup-sheet-WS-style.css","utf-8") + "\n" +
-    "</style> \n" +
-    "   <title>Setup sheet</title> \n" +
-    " </head> \n" +
-    " <body> \n" +
-    "  <div class=\"main-page\"> \n" +
-    "    <div class=\"sub-page\"> \n");
-}
-
-function htmlEnd()
-{
-    write(
-    "      </div> \n" +
-    "   </div> \n" +
-    " </body> \n" +
-    "</html> \n");
-}
 
 function divS(dClass, dStyle) //div start
 {
@@ -366,6 +351,117 @@ function writeToolTable() //Write html tool table
     divE();
 }
 
+function writeToolTableAll() //Write tool table, using getSection instead of getToolTable - BETA
+{
+    var nSection=getNumberOfSections();
+    const sectIds=[]; //Section IDs
+    const toolIds=[]; //Tool T numbers
+    var valLeast=10; //Smallest value so far
+    var valMost=1; //Biggest value so far
+
+    //Sort by tool number
+    for(var i=0;i<nSection;++i)
+    {
+        var sect=getSection(i);
+        var tool=sect.getTool();
+
+        if(tool.number <= valLeast) //Add to beginning
+        {
+            sectIds.unshift(sect.getId());
+            toolIds.unshift(tool.number);
+            valLeast=tool.number;
+        }
+        else if(tool.number >= valMost) //Add to end
+        {
+            sectIds.push(sect.getId());
+            toolIds.push(tool.number);
+            valMost=tool.number;
+        }
+        else //Add in between
+        {
+            for(var n=0;n<toolIds.length;++n)
+            {
+                if(tool.number < toolIds[n])
+                {
+                    toolIds.splice(n,0,tool.number);
+                    sectIds.splice(n,0,sect.getId());
+                    break;
+                }
+            }
+        }
+    }
+
+    //Table header
+    divS("contentContainer","border:none;");
+        divSE("contentHeader","TOOLS","border: 1px solid black; border-bottom:none;");
+        tableS("toolTable");
+            tableRowS();
+                tableHead("Type");
+                tableHead("T");
+                tableHead("H");
+                tableHead("Diameter");
+                tableHead("NoF");
+                tableHead("Desc.");
+                tableHead("Cmt");
+                tableHead("BL");
+                tableHead("Vendor");
+                tableHead("ID");
+            tableRowE();
+
+    var lastTn;
+    var lastHn;
+    var lastDia;
+    var lastBl;
+    var lastDesc;
+
+    //Write tools
+    for(var i=0;i<sectIds.length;++i)
+    {
+        var sect=getSection(sectIds[i]);
+        var tool=sect.getTool();
+
+        var showTool=true;
+
+        //Check for duplicates
+        if(i!=0 && getProperty("hideDuplicates") && tool.number==lastTn) {
+            if(tool.lengthOffset==lastHn) {
+                if(tool.diameter==lastDia) {
+                    if(tool.bodyLength==lastBl) {
+                        if(tool.description==lastDesc) {
+                            showTool=false; //Tool is likely to be a duplicate, don't show.
+                        }
+                    }
+                }
+            }
+        }
+        
+        if(showTool)
+        {
+            tableRowS();
+                tableCell(getToolTypeName(tool.type)); //1
+                tableCell("T" + tool.number);          //2
+                tableCell("H" + tool.lengthOffset);    //3
+                tableCell(tool.diameter);              //4
+                tableCell(tool.numberOfFlutes);        //5
+                tableCell(tool.description);           //6
+                tableCell(tool.comment);               //7
+                tableCell(tool.bodyLength);            //8
+                tableCell(tool.vendor);                //9
+                tableCell(tool.productId);             //10
+            tableRowE();
+
+            lastTn=tool.number;
+            lastHn=tool.lengthOffset;
+            lastDia=tool.diameter;
+            lastBl=tool.bodyLength;
+            lastDesc=tool.description;
+        }
+    }
+
+        tableE();
+    divE();
+}
+
 function writePathTableHead() //Write html toolpath table
 {
     divS("contentContainer","border:none;");
@@ -383,12 +479,44 @@ function writePathTableHead() //Write html toolpath table
             tableRowE();
 }
 
+function htmlSetup()
+{
+    write(
+    "<!DOCTYPE html> \n" +
+    "<html> \n" +
+    " <head> \n" +
+    "<style type=\"text/css\"> \n" +
+    loadText("setup-sheet-WS-style.css","utf-8") + "\n" +
+    "</style> \n" +
+    "   <title>Setup sheet</title> \n" +
+    " </head> \n" +
+    " <body> \n" +
+    "  <div class=\"main-page\"> \n" +
+    "    <div class=\"sub-page\"> \n");
+}
+
+function htmlEnd()
+{
+    //Generated by:
+    var sysGen="";
+    if(hasGlobalParameter("generated-by")) sysGen=getGlobalParameter("generated-by");
+    else sysGen="Autodesk CAM";
+
+            divE(); //Sub page
+            divS("footerCont");
+                divSE("camSysFooter","Generated by: " + sysGen);
+            divE();
+        divE(); //Main page
+    writeln("</body>");
+    writeln("</html>");
+}
+
 function onOpen() //On init of post
 {
     htmlSetup();
 
     //WS logo
-    var wsLogoPath = findFile("FablabLogoBW_Text.png");
+    var wsLogoPath = findFile("_Custom/FablabLogoBW_Text.png");
     writeImg("padding-bottom:15px",getImageAsImgSrc(wsLogoPath),"WS Logo","40%");
 
     //Title
@@ -479,7 +607,7 @@ function onSectionEnd() //On end of section
             divE();
         }
 
-        if(getProperty("writeTools")) writeToolTable(); //Write tools
+        if(getProperty("writeTools")) writeToolTableAll(); //Write tools ALL
         if(getProperty("writePaths")) writePathTableHead(); //Write path table header
     }
     if(getProperty("writePaths"))
@@ -511,8 +639,6 @@ function onClose() //On close of post
     //Close up path table
     tableE();
     divE();
-
-    //Generated by:
 
     htmlEnd();
 }

@@ -34,7 +34,7 @@ properties=
     
 };
 
-var xyzFormat = createFormat({decimals:(unit == MM ? 3 : 4)});
+var xyzFormat = createFormat({decimals:5, forceDecimal:true});
 var feedFormat = createFormat({decimals:(unit == MM ? 3 : 5)});
 var toolFormat = createFormat({decimals:0});
 var rpmFormat = createFormat({decimals:0});
@@ -42,7 +42,7 @@ var secFormat = createFormat({decimals:3});
 var angleFormat = createFormat({decimals:0, scale:DEG});
 var degFormat = createFormat({decimals:0});
 var pitchFormat = createFormat({decimals:3});
-var spatialFormat = createFormat({decimals:(unit == MM ? 2 : 3)});
+var spatialFormat = createFormat({decimals:2});
 var percentageFormat = createFormat({decimals:1, scale:100});
 var timeFormat = createFormat({decimals:2});
 var taperFormat = angleFormat; // share format
@@ -58,44 +58,37 @@ var supportedImageTypes =
     "tiff": "image/tiff"
 };
 
-function htmlSetup()
+function divS(dClass, dStyle) //div start
 {
-    write(
-    "<!DOCTYPE html> \n" +
-    "<html> \n" +
-    " <head> \n" +
-    "<style type=\"text/css\"> \n" +
-    loadText("setup-sheet-templ-style.css","utf-8") + "\n" +
-    "</style> \n" +
-    "   <title>Setup sheet templ</title> \n" +
-    " </head> \n" +
-    " <body> \n" +
-    "  <div class=\"main-page\"> \n" +
-    "    <div class=\"sub-page\"> \n");
-}
-
-function htmlEnd()
-{
-    write(
-    "      </div> \n" +
-    "   </div> \n" +
-    " </body> \n" +
-    "</html> \n");
-}
-
-function divS(dClass, dText, dStyle) //div start
-{
-
+    write("<div class=\"" + dClass + "\"");
+    if(typeof dStyle !== "undefined") write(" style=\"" + dStyle + "\"");
+    
+    writeln(">");
 }
 
 function divE() //div end
 {
-
+    writeln("</div>");
 }
 
 function divSE(dClass, dText, dStyle) //div start and end
 {
+    write("<div class=\"" + dClass + "\"");
+    if(typeof dStyle !== "undefined") write(" style=\"" + dStyle + "\">");
+    else write(">");
+    if(typeof dText !== "undefined") write(dText);
 
+    writeln("</div>");
+}
+
+function writeImg(iStyle,iSrc,iAlt,iWidth)
+{
+    write("<img ");
+    if(typeof iStyle !== "undefined") write("style=\"" + iStyle + "\"");
+    write("src=\"" + iSrc + "\"");
+    write("alt=\"" + iAlt + "\"");
+    if(typeof iWidth !== "undefine") write("width=\"" + iWidth + "\"");
+    writeln("/>");
 }
 
 /** Loads the given image as a img data snippet. Returns empty string if unsupported. */
@@ -118,7 +111,7 @@ function modelImg() //Insert model image
     imgSrc=getImageAsImgSrc(path);
     FileSystem.remove(path);
 
-    writeln("<img src=\"" + imgSrc + "\" alt=\"Model image\" width=\"50%\"/>");
+    writeln("<img src=\"" + imgSrc + "\" alt=\"Model image\" style=\"height:230px;\"/>");
 }
 
 function tableS(tClass, tStyle) //Table start
@@ -153,48 +146,316 @@ function tableHead(tText) //Table header
     writeln("<th>" + tText + "</th>");
 }
 
-function tableCell(tText) //Table cell
+function tableCell(tText,cStyle) //Table cell
 {
-    writeln("<td>" + tText + "</td>");
+    if(typeof cStyle === "undefined") write("<td>");
+    else write("<td style=\"" + cStyle + "\">");
+    writeln(tText + "</td>");
+}
+
+function writeCol(cSpan,cStyle)
+{
+    writeln("<col span=\"" + cSpan + "\" " + "style=\"" + cStyle + "\">");
+}
+
+function formatCycleTime(cycleTime) 
+{
+    cycleTime += 0.5; // round up
+    var seconds = cycleTime % 60 | 0;
+    var minutes = ((cycleTime - seconds) / 60 | 0) % 60;
+    var hours = (cycleTime - minutes * 60 - seconds) / (60 * 60) | 0;
+    if (hours > 0) {
+      return subst(localize("%1h:%2m:%3s"), hours, minutes, seconds);
+    } else if (minutes > 0) {
+      return subst(localize("%1m:%2s"), minutes, seconds);
+    } else {
+      return subst(localize("%1s"), seconds);
+    }
+}
+
+function formatWorkOfs(workOfs)
+{
+    //WCS starts at 1 -> G54, 2 -> G55 etc. 
+    if(workOfs==0) workOfs+=1; //If set to default
+    workOfs+=53;
+    var workOfsStr="G" + workOfs;
+
+    return workOfsStr;
+}
+
+function formatSetupDim(data)
+{
+    var zPadding=2;
+    var fData=xyzFormat.format(data); //Round off
+
+    //Add trailing zeros
+    var dec=(fData.length)-(fData.indexOf(".")+1)
+    if(dec < zPadding) 
+    {
+        dec=zPadding-dec;
+        for(var i=0; i < dec;++i) fData+="0";
+    }
+
+    return fData;
+}
+
+function getCoolantDescription(coolant) 
+{
+    switch (coolant) 
+    {
+        case COOLANT_OFF:
+            return ("Off");
+        case COOLANT_FLOOD:
+            return ("Flood");
+        case COOLANT_MIST:
+            return ("Mist");
+        case COOLANT_THROUGH_TOOL:
+            return ("Through tool");
+        case COOLANT_AIR:
+            return ("Air");
+        case COOLANT_AIR_THROUGH_TOOL:
+            return ("Air through tool");
+        case COOLANT_SUCTION:
+            return ("Suction");
+        case COOLANT_FLOOD_MIST:
+            return ("Flood and mist");
+        case COOLANT_FLOOD_THROUGH_TOOL:
+            return ("Flood and through tool");
+        default:
+            return ("Unknown");
+    }
+}
+
+function getJobTime()
+{
+    var totalJobTime=0;
+    var totalRapidDist=0;
+    var nSections=getNumberOfSections();
+
+    for (var i=0; i < nSections; ++i)
+    {
+        var cSection=getSection(i);
+        totalJobTime+=cSection.getCycleTime();
+        totalRapidDist+=cSection.getRapidDistance();
+    }
+    totalJobTime += totalRapidDist / getProperty("rapidFeed") * 60;
+
+    return totalJobTime;
+}
+
+function printNotes()
+{
+    //Check if op has notes
+    if(hasParameter("job-notes"))
+    {
+        var opNotes=getParameter("job-notes");
+        const splitOpNotes=opNotes.split("\n"); //Split on newline
+        aLen=splitOpNotes.length;
+        for(var i=0;i<aLen;++i) writeln(splitOpNotes[i] + "<br/>"); //Add line breaks
+
+        return true;
+    }
+    else return false;
 }
 
 function writeToolTable() //Write html tool table
 {
-    var tools=getToolTable();
-
-    for(var i=0; i < tools.getNumberOfTools(); ++i)
-    {
-        var tool=tools.getTool(i);
-        var toolDia=tool.diameter;
-        writeln("<h2>Diameter: " + toolDia + "</h2>");
-    }
-
-    tableS("topTable");
-        tableRowS();
-            tableCell("Test1");
-            tableCell("Test2");
-        tableRowE();
-        tableRowS();
-            tableCell("Test1");
-            tableCell("Test2");
-        tableRowE();
-    tableE();
+    divS("contentContainer","border:none;");
+        divSE("contentHeader","TOOLS","border: 1px solid black; border-bottom:none;");
+        tableS("toolTable");
+            tableRowS();
+                tableHead("Type");
+                tableHead("T");
+                tableHead("H");
+                tableHead("Diameter");
+                tableHead("NoF");
+                tableHead("Desc.");
+                tableHead("Cmt");
+                tableHead("BL");
+                tableHead("Vendor");
+                tableHead("ID");
+            tableRowE();
+            var tools=getToolTable();
+            for(var i=0;i<tools.getNumberOfTools();++i)
+            {
+                tableRowS();
+                    var tool=tools.getTool(i);
+                    tableCell(getToolTypeName(tool.type)); //1
+                    tableCell("T" + tool.number);          //2
+                    tableCell("H" + tool.lengthOffset);    //3
+                    tableCell(tool.diameter);              //4
+                    tableCell(tool.numberOfFlutes);        //5
+                    tableCell(tool.description);           //6
+                    tableCell(tool.comment);               //7
+                    tableCell(tool.bodyLength);            //8
+                    tableCell(tool.vendor);                //9
+                    tableCell(tool.productId);             //10
+                tableRowE();
+            }
+        tableE();
+    divE();
 }
 
-function writePathTable() //Write html toolpath table
+function writeToolTableAll()
 {
-    var pathId=currentSection.getId();
-    var descr=getParameter("operation-strategy");
-    var cmt=getParameter("operation-comment");
-    var cTool=currentSection.getTool();
+    var nSection=getNumberOfSections();
+    const sectIds=[]; //Section IDs
+    const toolIds=[]; //Tool T numbers
+    var valLeast=10; //Smallest value so far
+    var valMost=1; //Biggest value so far
 
-    writeln("<h2>T" + cTool.number + " | " + cmt + "</h2>");
+    //Sort by tool number
+    for(var i=0;i<nSection;++i)
+    {
+        var sect=getSection(i);
+        var tool=sect.getTool();
+
+        if(tool.number <= valLeast) //Add to beginning
+        {
+            sectIds.unshift(sect.getId());
+            toolIds.unshift(tool.number);
+            valLeast=tool.number;
+        }
+        else if(tool.number >= valMost) //Add to end
+        {
+            sectIds.push(sect.getId());
+            toolIds.push(tool.number);
+            valMost=tool.number;
+        }
+        else //Add in between
+        {
+            for(var n=0;n<toolIds.length;++n)
+            {
+                if(tool.number < toolIds[n])
+                {
+                    toolIds.splice(n,0,tool.number);
+                    sectIds.splice(n,0,sect.getId());
+                    break;
+                }
+            }
+        }
+    }
+
+    //Table header
+    divS("contentContainer","border:none;");
+        divSE("contentHeader","TOOLS","border: 1px solid black; border-bottom:none;");
+        tableS("toolTable");
+            tableRowS();
+                tableHead("Type");
+                tableHead("T");
+                tableHead("H");
+                tableHead("Diameter");
+                tableHead("NoF");
+                tableHead("Desc.");
+                tableHead("Cmt");
+                tableHead("BL");
+                tableHead("Vendor");
+                tableHead("ID");
+            tableRowE();
+
+    var lastTn;
+    var lastHn;
+    var lastDia;
+    var lastBl;
+    var lastDesc;
+
+    //Write tools
+    for(var i=0;i<sectIds.length;++i)
+    {
+        var sect=getSection(sectIds[i]);
+        var tool=sect.getTool();
+
+        var showTool=true;
+
+        //Show all?
+        if(i!=0 && tool.number==lastTn) {
+            if(tool.lengthOffset==lastHn) {
+                if(tool.diameter==lastDia) {
+                    if(tool.bodyLength==lastBl) {
+                        if(tool.description==lastDesc) {
+                            showTool=false; //Tool is likely to be a duplicate, don't show.
+                        }
+                    }
+                }
+            }
+        }
+        
+        if(showTool)
+        {
+            tableRowS();
+                tableCell(getToolTypeName(tool.type)); //1
+                tableCell("T" + tool.number);          //2
+                tableCell("H" + tool.lengthOffset);    //3
+                tableCell(tool.diameter);              //4
+                tableCell(tool.numberOfFlutes);        //5
+                tableCell(tool.description);           //6
+                tableCell(tool.comment);               //7
+                tableCell(tool.bodyLength);            //8
+                tableCell(tool.vendor);                //9
+                tableCell(tool.productId);             //10
+            tableRowE();
+
+            lastTn=tool.number;
+            lastHn=tool.lengthOffset;
+            lastDia=tool.diameter;
+            lastBl=tool.bodyLength;
+            lastDesc=tool.description;
+        }
+    }
+
+        tableE();
+    divE();
+}
+
+function writePathTableHead() //Write html toolpath table
+{
+    divS("contentContainer","border:none;");
+        divSE("contentHeader","TOOLPATHS","border: 1px solid black; border-bottom:none;");
+        tableS("pathTable");
+            tableRowS();
+                tableHead("Strategy");
+                tableHead("Tool");
+                tableHead("Tool type");
+                tableHead("Coolant");
+                tableHead("Cycle time");
+                tableHead("RPM");
+                tableHead("Feedrate");
+                tableHead("fz");
+            tableRowE();
+}
+
+function htmlSetup()
+{
+    write(
+    "<!DOCTYPE html> \n" +
+    "<html> \n" +
+    " <head> \n" +
+    "<style type=\"text/css\"> \n" +
+    loadText("setup-sheet-templ-style.css","utf-8") + "\n" +
+    "</style> \n" +
+    "   <title>Setup sheet</title> \n" +
+    " </head> \n" +
+    " <body> \n" +
+    "  <div class=\"main-page\"> \n" +
+    "    <div class=\"sub-page\"> \n");
+}
+
+function htmlEnd()
+{
+    //Generated by:
+    var sysGen="";
+    if(hasGlobalParameter("generated-by")) sysGen=getGlobalParameter("generated-by");
+    else sysGen="Autodesk CAM";
+
+            divE(); //Sub page
+        divE(); //Main page
+    writeln("</body>");
+    writeln("</html>");
 }
 
 function onOpen() //On init of post
 {
     htmlSetup();
-    modelImg();
 }
 
 function onSection() //On start of section
@@ -206,23 +467,8 @@ function onSectionEnd() //On end of section
 {
     if(isFirstSection())
     {
-        writeln("<h2>" + programName + "</h2>");
-        writeln("<h2>" + programComment + "</h2>");
-
-        var workpiece=getWorkpiece();
-        var stockDim=Vector.diff(workpiece.upper, workpiece.lower);
-        var lower = new Vector(getParameter("part-lower-x"), getParameter("part-lower-y"), getParameter("part-lower-z"));
-        var upper = new Vector(getParameter("part-upper-x"), getParameter("part-upper-y"), getParameter("part-upper-z"));
-        var partDim=Vector.diff(upper, lower);
-        var cWorkOfs=currentSection.workOffset;
-
-        writeln("<h2>" + cWorkOfs + "</h2>");
-        writeln("<h2>" + "Stock:" + spatialFormat.format(stockDim.x) + " " + spatialFormat.format(stockDim.y) + " " + spatialFormat.format(stockDim.z) + "</h2>");
-        writeln("<h2>" + "Part:" + spatialFormat.format(partDim.x) + " " + spatialFormat.format(partDim.y) + " " + spatialFormat.format(partDim.z) + "</h2>");
-
-        writeToolTable();
+        writeToolTableAll();
     }
-    writePathTable();
 }
 
 function onClose() //On close of post
