@@ -80,6 +80,14 @@ properties=
         value : true,
         scope : "post"
     },
+    hideMnc:
+    {
+        title : "Hide ManualNC",
+        description : "Hide manual nc snippets",
+        type : "boolean",
+        value : false,
+        scope : "post"
+    },
     rapidFeed: {
         title      : "Rapid feed",
         description: "Sets the rapid traversal feedrate. Set this to get more accurate cycle times.",
@@ -186,9 +194,13 @@ function tableE() //Table end
     writeln("</table>");
 }
 
-function tableRowS() //Table row start
+function tableRowS(rStyle) //Table row start
 {
-    writeln("<tr>");
+    write("<tr")
+
+    if(typeof rStyle !== "undefined") write(" style=\"" + rStyle + "\"");
+
+    writeln(">");
 }
 
 function tableRowE() //Table row end
@@ -511,6 +523,53 @@ function htmlEnd()
     writeln("</html>");
 }
 
+const cachedMncCMD=[];
+const cachedMncVal=[];
+
+function onManualNC(command, value)
+{
+    cachedMnc=true;
+
+    switch (command)
+    {
+        case COMMAND_COMMENT:
+            cachedMncCMD.push("Comment");
+        break;
+        case COMMAND_STOP:
+            cachedMncCMD.push("Stop");
+        break;
+        case COMMAND_OPTIONAL_STOP:
+            cachedMncCMD.push("Optional stop");
+        break;
+        case COMMAND_TOOL_MEASURE:
+            cachedMncCMD.push("Tool measure");
+        break;
+        case COMMAND_CALIBRATE:
+            cachedMncCMD.push("Calibrate");
+        break;
+        case COMMAND_VERIFY:
+            cachedMncCMD.push("Verify");
+        break;
+        case COMMAND_CLEAN:
+            cachedMncCMD.push("Clean");
+        break;
+        case COMMAND_ACTION:
+            cachedMncCMD.push("-");
+            cachedMncVal.push(value);
+        break;
+        case COMMAND_ALARM:
+            cachedMncCMD.push("Alarm");
+        break;
+        case COMMAND_ALERT:
+            cachedMncCMD.push("Alert");
+        break;
+        case COMMAND_PASS_THROUGH:
+            cachedMncCMD.push("-");
+            cachedMncVal.push(value);
+        break;
+    }
+}
+
 function onOpen() //On init of post
 {
     htmlSetup();
@@ -612,6 +671,28 @@ function onSectionEnd() //On end of section
     }
     if(getProperty("writePaths"))
     {
+        //Write Manual nc
+        var mncCutof=16; //Cuts of the value after this many charecters
+        if(cachedMncCMD.length && !getProperty("hideMnc"))
+        {
+            for(var i=0;i<cachedMncCMD.length;++i)
+            {
+                var textOut=cachedMncCMD[i];
+                if(typeof cachedMncVal[i] !== "undefined") //Check whether there exist a value
+                {
+                    if(cachedMncVal[i].length > mncCutof) textOut+=cachedMncVal[i].substring(0,mncCutof-1) + "..."; //Cut of if too long
+                    else textOut+=cachedMncVal[i];
+                }
+
+                tableRowS("border-right:1px solid black;");
+                    tableCell(textOut);
+                tableRowE();
+            }
+            //Data has been printed, delete all. 
+            cachedMncCMD.length=0;
+            cachedMncVal.length=0;
+        }
+
         var pathId=currentSection.getId();
         var descr=getParameter("operation-strategy");
         var cmt=getParameter("operation-comment");
