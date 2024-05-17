@@ -1,3 +1,12 @@
+Change log:
+
+	RAPTOR:
+	-zRetract
+	-Stop after tool change
+	-Action
+		-Tool meas
+		-PMSG
+
 TODO:
 	HAAS:
 	-Finish engrave single and multi line

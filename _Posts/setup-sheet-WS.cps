@@ -411,11 +411,12 @@ function writeToolTableAll() //Write tool table, using getSection instead of get
                 tableHead("Type");
                 tableHead("T");
                 tableHead("H");
-                tableHead("Diameter");
+                tableHead("DIA");
                 tableHead("NoF");
                 tableHead("Desc.");
                 tableHead("Cmt");
                 tableHead("BL");
+                tableHead("Shaft");
                 tableHead("Vendor");
                 tableHead("ID");
             tableRowE();
@@ -458,8 +459,9 @@ function writeToolTableAll() //Write tool table, using getSection instead of get
                 tableCell(tool.description);           //6
                 tableCell(tool.comment);               //7
                 tableCell(tool.bodyLength);            //8
-                tableCell(tool.vendor);                //9
-                tableCell(tool.productId);             //10
+                tableCell(tool.shaftDiameter);         //9
+                tableCell(tool.vendor);                //10
+                tableCell(tool.productId);             //11
             tableRowE();
 
             lastTn=tool.number;

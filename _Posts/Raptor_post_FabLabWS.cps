@@ -12,14 +12,14 @@
   Modified by Benjamin Solar 2023
 */
 
-description = "RS-274D - Raptor - Modified by Benjamin Solar 2023";
+description = "RaptorX-SL - RS-274D";
 vendor = "Autodesk";
 vendorUrl = "http://www.autodesk.com";
 legal = "Copyright (C) 2012-2016 by Autodesk, Inc.";
 certificationLevel = 2;
 minimumRevision = 24000;
 
-longDescription = "Generic post for the RS-274D format. Most CNCs will use a format very similar to RS-274D. When making a post for a new CNC control this post will often serve as the basis.";
+longDescription = "Raptor X-SL post modified by Benjamin Solar for WS";
 
 extension = "nc";
 setCodePage("ascii");
@@ -46,6 +46,7 @@ properties = {
   sequenceNumberStart: 10, // first sequence number
   sequenceNumberIncrement: 5, // increment for sequence numbers
   optionalStop: false, // optional stop
+  stopAfterTC: false, //optional stop after tool change
   separateWordsWithSpace: true, // specifies that the words should be separated with a white space
   zRetract: 0 // the z position for retracting tool G28 not possible
 };
@@ -228,6 +229,51 @@ function getWOFS()
   return gFormat.format(53+fwofs);
 }
 
+//Action tags
+const toolMeasTag=["MEAS_1","MEAS_2","MEAS_3","MEAS_4","MEAS_5","MEAS_6"];
+var toolMeasAllTag="MEAS_ALL";
+var parkMsgTag="PMSG";
+
+function autToolMeas(toolNum)
+{
+  writeComment("Measuring tool " + toolNum);
+  writeBlock("PRINT\"Measuring T" + toolNum + "\"");
+  writeBlock("T" + toolNum + " M06");
+  writeBlock("G79");
+}
+
+function autToolMeasAll()
+{
+  writeComment("Measure all tools in magazine");
+  writeBlock("PRINT\"Measuring all tools\"");
+  writeBlock("T1 M06");
+  writeBlock("G79");
+  writeBlock("T2 M06");
+  writeBlock("G79");
+  writeBlock("T3 M06");
+  writeBlock("G79");
+  writeBlock("T4 M06");
+  writeBlock("G79");
+  writeBlock("T5 M06");
+  writeBlock("G79");
+  writeBlock("T6 M06");
+  writeBlock("G79");
+}
+
+//Park machine, then display a message
+function parkMsg(msg)
+{
+  writeComment("Parking");
+  writeBlock("G90"); //Absolute
+  writeBlock("G53 G00 Z0.0"); //Retract
+  writeBlock("G28"); //Go to park
+
+  writeBlock("M05");
+  writeBlock("ASKBOOL\"" + msg + "\""); //Display message
+  writeBlock("M03"); //TODO : Spin direction?
+  writeBlock(getWOFS()); //Reset back WCS
+}
+
 function onComment(message) {
   writeComment(message);
 }
@@ -262,29 +308,20 @@ function onManualNC(command, value) {
     writeBlock(getWOFS()); //Set the wcs back after manual-nc
 	break;
   case COMMAND_ACTION: //Action, use tag to select which
-    if(value=="MEAS_1") {writeComment("Measure tool 1"); writeBlock("PRINT\"Measuring T1\""); writeBlock("T1 M06"); writeBlock("G79");}
-    if(value=="MEAS_2") {writeComment("Measure tool 2"); writeBlock("PRINT\"Measuring T2\""); writeBlock("T2 M06"); writeBlock("G79");}
-    if(value=="MEAS_3") {writeComment("Measure tool 3"); writeBlock("PRINT\"Measuring T3\""); writeBlock("T3 M06"); writeBlock("G79");}
-    if(value=="MEAS_4") {writeComment("Measure tool 4"); writeBlock("PRINT\"Measuring T4\""); writeBlock("T4 M06"); writeBlock("G79");}
-    if(value=="MEAS_5") {writeComment("Measure tool 5"); writeBlock("PRINT\"Measuring T5\""); writeBlock("T5 M06"); writeBlock("G79");}
-    if(value=="MEAS_6") {writeComment("Measure tool 6"); writeBlock("PRINT\"Measuring T6\""); writeBlock("T6 M06"); writeBlock("G79");}
-    if(value=="MEAS_ALL") 
+    //Tag MEAS
+    for(var i=0;i<=5;++i)
     {
-      writeComment("Measure all tools in magazine");
-      writeBlock("PRINT\"Measuring all tools\"");
-      writeBlock("T1 M06");
-      writeBlock("G79");
-      writeBlock("T2 M06");
-      writeBlock("G79");
-      writeBlock("T3 M06");
-      writeBlock("G79");
-      writeBlock("T4 M06");
-      writeBlock("G79");
-      writeBlock("T5 M06");
-      writeBlock("G79");
-      writeBlock("T6 M06");
-      writeBlock("G79");
-	}
+      if(value==toolMeasTag[i]) autToolMeas(i+1);
+    }
+    if(value==toolMeasAllTag) autToolMeasAll();
+
+    //Tag PMSG (Park - message)
+    var cmd=String(value).split("(");
+    if(cmd[0]==parkMsgTag)
+    {
+      var msgVal=cmd[1].replace(")","");
+      parkMsg(msgVal);
+    }
 	break;
   case COMMAND_PRINT_MESSAGE:
 	  writeBlock("PRINT\"" + value + "\"");
@@ -464,6 +501,13 @@ function onSection() {
     }
 
     writeBlock("T" + toolFormat.format(tool.number), mFormat.format(6));
+
+    //TODO : change log add
+    if(!isFirstSection() && properties.stopAfterTC) //Stop after tool change
+    {
+      onCommand(COMMAND_OPTIONAL_STOP);
+    }
+
     if (tool.comment) {
       writeComment(tool.comment);
     }

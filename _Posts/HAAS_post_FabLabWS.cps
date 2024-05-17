@@ -19,7 +19,7 @@ minimumRevision = 40783;
 
 longDescription = "Generic post for use with all common 3-axis HAAS mills like the DM, VF, Office Mill, and Mini Mill series. This post is for the pre-Next Generation Control. By default positioning moves will be output as high feed G1s instead of G0s. You can turn on the property 'useG0' to force G0s but be careful as the CNC will follow a dogleg path rather than a direct path.";
 
-extension = "txt";
+extension = "nc";
 programNameIsInteger = true;
 setCodePage("ascii");
 
