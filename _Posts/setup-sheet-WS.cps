@@ -8,10 +8,10 @@
  * 
  * TODO:
  * Pattern support - cached
- * Manual nc support - cached
  * writeToolsAll - BETA
  * Hightlight tools with the same T number
  * TOOL B - layout - show tools with feed and speed
+ * Option for inverting image? That way it might be easier to view. 
  */
 
 description="WS Setup-sheet";
@@ -325,7 +325,7 @@ function printNotes()
     else return false;
 }
 
-function writeToolTable() //Write html tool table
+function writeToolTable() //Write html tool table - legacy
 {
     divS("contentContainer","border:none;");
         divSE("contentHeader","TOOLS","border: 1px solid black; border-bottom:none;");
@@ -414,7 +414,7 @@ function writeToolTableAll() //Write tool table, using getSection instead of get
                 tableHead("DIA");
                 tableHead("NoF");
                 tableHead("Desc.");
-                tableHead("Cmt");
+                tableHead("CMT");
                 tableHead("BL");
                 tableHead("Shaft");
                 tableHead("Vendor");
@@ -451,17 +451,17 @@ function writeToolTableAll() //Write tool table, using getSection instead of get
         if(showTool)
         {
             tableRowS();
-                tableCell(getToolTypeName(tool.type)); //1
-                tableCell("T" + tool.number);          //2
-                tableCell("H" + tool.lengthOffset);    //3
-                tableCell(tool.diameter);              //4
-                tableCell(tool.numberOfFlutes);        //5
-                tableCell(tool.description);           //6
-                tableCell(tool.comment);               //7
-                tableCell(tool.bodyLength);            //8
-                tableCell(tool.shaftDiameter);         //9
-                tableCell(tool.vendor);                //10
-                tableCell(tool.productId);             //11
+                tableCell(getToolTypeName(tool.type));      //1
+                tableCell("T" + tool.number);               //2
+                tableCell("H" + tool.lengthOffset);         //3
+                tableCell("&empty;" + tool.diameter);       //4
+                tableCell(tool.numberOfFlutes);             //5
+                tableCell(tool.description);                //6
+                tableCell(tool.comment);                    //7
+                tableCell(tool.bodyLength);                 //8
+                tableCell("&empty;" + tool.shaftDiameter);  //9
+                tableCell(tool.vendor);                     //10
+                tableCell(tool.productId);                  //11
             tableRowE();
 
             lastTn=tool.number;
@@ -499,6 +499,7 @@ function htmlSetup()
     "<!DOCTYPE html> \n" +
     "<html> \n" +
     " <head> \n" +
+    "<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\"> \n" +
     "<style type=\"text/css\"> \n" +
     loadText("setup-sheet-WS-style.css","utf-8") + "\n" +
     "</style> \n" +
