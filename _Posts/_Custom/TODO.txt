@@ -7,12 +7,19 @@ Change log:
 		-Tool meas
 		-PMSG
 
+	HAAS post:
+	-getWOFS added, safeWCS
+	-Meas seq improved
+
 TODO:
-	HAAS:
+	HAAS post:
 	-Finish engrave single and multi line
 	-Finish CLEAN etc
 	-Beta test tool measure
 
-	RAPTOR:
+	RAPTOR post:
 	-Add options to turn off full zretract
 	-Beta test wcs change
+
+	HAAS NC only
+	-When doing meas_all, it includes other stuff like comments, pass-through etc

@@ -650,10 +650,21 @@ Supported:
 
 */
 
+//Get first WCS
+function getWOFS()
+{
+  var fSec=getSection(0);
+  var fwofs=fSec.workOffset;
+  if(fwofs==0) fwofs=1;
+  return gFormat.format(53+fwofs);
+}
+
 const toolMeasTag=["MEAS_1","MEAS_2","MEAS_3","MEAS_4","MEAS_5","MEAS_6","MEAS_7","MEAS_8","MEAS_9","MEAS_10","MEAS_ALL"];
 
-function manualToolMeas(toolNum)
+function manualToolMeas(toolNum,safeWCS)
 {
+  if(typeof safeWCS === "undefined") safeWCS=true;
+
   var toolH=0;
   var toolD=0;
   var toolBL=0;
@@ -693,14 +704,15 @@ function manualToolMeas(toolNum)
     }
   }
 
-  writeComment("T" + toolNum + " " + "H" + toolH + " Meas seq.");
-  writeComment("Block delete to skip - Press RESET to abort");
-  writeComment("Diameter: " + toolD + "mm -" + " Body length: " + toolBL + "mm");
+  //No mod                       = Run through normal without stoping
+  //Optional stop                = Run normal with stops after each tool change
+  //Optional stop + block delete = Skips skips sequence until next opt. stop
+  //Block delete                 = Skips entire measeure sequence
 
   writeOptionalBlock("T"+ toolNum +" M06");
-
-  //writeOptionalBlock("M109 P501 (T" + toolNum + " " + "H" + toolH + " Meas)"); //Display msg
-  writeBlock("M01"); //Optional stop
+  writeBlock("M01");
+  writeComment("T" + toolNum + " " + "H" + toolH + " MEAS");
+  writeOptionalBlock("T"+ toolNum +" M06");
 
   //Setup
   writeOptionalBlock("G43 H" + toolH);
@@ -712,13 +724,12 @@ function manualToolMeas(toolNum)
   //Plunging to measuring puck
   writeOptionalBlock("G59 G01 Z70.0 F3000.0");
   writeOptionalBlock("G59 G01 Z20.0 F500.0");
-  writeComment("Measure tool please!");
-  writeComment("H offset: " + toolH);
   writeOptionalBlock("M00");
-  //TODO G10?
+  writeComment("H offset: " + toolH);
 
   //Return
-  writeOptionalBlock("G53 G00 Z0.0");
+  writeBlock("G53 G00 Z0.0"); //Return to Z0.0, non optional
+  if(safeWCS) writeBlock(getWOFS()); //Return to a safe WCS
 }
 
 function manualToolMeasAll()
@@ -730,8 +741,10 @@ function manualToolMeasAll()
   for(var i=0;i < tools.getNumberOfTools(); ++i)
   {
     var tool=tools.getTool(i);
-    manualToolMeas(tool.number);
+    manualToolMeas(tool.number,false);
   }
+
+  writeBlock(getWOFS()); //Return to a safe WCS
 }
 
 function engraveText(xVal, yVal, zVal, chrHeight, textValue, tNum, hNum, cutFeed)
@@ -761,7 +774,8 @@ function engraveText(xVal, yVal, zVal, chrHeight, textValue, tNum, hNum, cutFeed
   writeBlock("G90 G53 G00 Z0.0");
 
   writeBlock("M01");
-  writeComment("Engrave NC END!")
+  writeComment("Engrave NC END!");
+  if(safeWCS) writeBlock(getWOFS()); //Return to a safe WCS
 }
 
 /* TODO : finish!

@@ -10,6 +10,11 @@
   FORKID {241E0993-8BE0-463b-8888-47968B9D7F9F}
 */
 
+/*
+Outputs measure sequence only, if posted in conjunction with other setups will filter out the MEAS tag
+--Benjamin Solar 2024
+*/
+
 description = "HAAS (pre-NGC)";
 vendor = "Haas Automation";
 vendorUrl = "https://www.haascnc.com";
@@ -17,7 +22,7 @@ legal = "Copyright (C) 2012-2020 by Autodesk, Inc.";
 certificationLevel = 2;
 minimumRevision = 40783;
 
-longDescription = "Generic post for use with all common 3-axis HAAS mills like the DM, VF, Office Mill, and Mini Mill series. This post is for the pre-Next Generation Control. By default positioning moves will be output as high feed G1s instead of G0s. You can turn on the property 'useG0' to force G0s but be careful as the CNC will follow a dogleg path rather than a direct path.";
+longDescription = "Outputs measure sequence only, if posted in conjunction with other setups will filter out the MEAS tag - Benjamin Solar 2024"
 
 extension = "nc";
 programNameIsInteger = true;
@@ -555,7 +560,7 @@ function onOpen() {
   */
   
   const toolMeasTag=["MEAS_1","MEAS_2","MEAS_3","MEAS_4","MEAS_5","MEAS_6","MEAS_7","MEAS_8","MEAS_9","MEAS_10","MEAS_ALL"];
-  
+    
   function manualToolMeas(toolNum)
   {
     var toolH=0;
@@ -597,14 +602,15 @@ function onOpen() {
       }
     }
   
-    writeComment("T" + toolNum + " " + "H" + toolH + " Meas seq.");
-    writeComment("Block delete to skip - Press RESET to abort");
-    writeComment("Diameter: " + toolD + "mm -" + " Body length: " + toolBL + "mm");
+    //No mod                       = Run through normal without stoping
+    //Optional stop                = Run normal with stops after each tool change
+    //Optional stop + block delete = Skips skips sequence until next opt. stop
+    //Block delete                 = Skips entire measeure sequence
   
     writeOptionalBlock("T"+ toolNum +" M06");
-  
-    //writeOptionalBlock("M109 P501 (T" + toolNum + " " + "H" + toolH + " Meas)"); //Display msg
-    writeBlock("M01"); //Optional stop
+    writeBlock("M01");
+    writeComment("T" + toolNum + " " + "H" + toolH + " MEAS");
+    writeOptionalBlock("T"+ toolNum +" M06");
   
     //Setup
     writeOptionalBlock("G43 H" + toolH);
@@ -616,13 +622,11 @@ function onOpen() {
     //Plunging to measuring puck
     writeOptionalBlock("G59 G01 Z70.0 F3000.0");
     writeOptionalBlock("G59 G01 Z20.0 F500.0");
-    writeComment("Measure tool please!");
-    writeComment("H offset: " + toolH);
     writeOptionalBlock("M00");
-    //TODO G10?
+    writeComment("H offset: " + toolH);
   
     //Return
-    writeOptionalBlock("G53 G00 Z0.0");
+    writeBlock("G53 G00 Z0.0"); //Return to Z0.0, non optional
   }
   
   function manualToolMeasAll()
@@ -692,25 +696,25 @@ function onOpen() {
   function onManualNC(command, value) {
     switch (command) {
     case COMMAND_COMMENT: //Write comment to gcode
-        writeComment(value);
+        //writeComment(value);
       break;
     case COMMAND_STOP:
-        writeBlock("M00");
+        //writeBlock("M00");
       break;
     case COMMAND_OPTIONAL_STOP:
-        writeBlock("M01");
+        //writeBlock("M01");
       break;
     case COMMAND_TOOL_MEASURE: //Measure current tool
-        writeComment("Measure current tool");
+        //writeComment("Measure current tool");
       break;
     case COMMAND_CALIBRATE:
-      writeComment("Calibrate!");
+      //writeComment("Calibrate!");
     break;
     case COMMAND_VERIFY: //Verify the work area, tool breakage etc. 
-        writeComment("Verify");
+        //writeComment("Verify");
       break;
     case COMMAND_CLEAN: //Clean the work area
-        writeComment("Clean");
+        //writeComment("Clean");
       break;
     case COMMAND_ACTION: //Action, use tag to select which
       //Tag MEAS
@@ -719,7 +723,8 @@ function onOpen() {
         if(value==toolMeasTag[i]) manualToolMeas(i+1);
       }
       if(value==toolMeasTag[10]) manualToolMeasAll();
-  
+      
+      /*
       //Tag ENGR
       var cmd=String(value).split("_");
       if(cmd[0]=="ENGR")
@@ -728,6 +733,7 @@ function onOpen() {
         val=String(cmd[1]).split(",");
         engraveText(val[0],val[1],val[2],val[3],val[4]);
       }
+      */
   
       /* TODO : finish!
       //Tag ENGRM
@@ -747,23 +753,25 @@ function onOpen() {
   
       break;
     case COMMAND_PRINT_MESSAGE:
-        writeComment(value);
+        //writeComment(value);
       break;
     case COMMAND_DISPLAY_MESSAGE:
-      writeComment(value);
+      //writeComment(value);
     break;
     case COMMAND_ALARM:
-      writeComment("Alarm");
+      //writeComment("Alarm");
     break;
     case COMMAND_ALERT:
-        writeComment("Alert!");
+        //writeComment("Alert!");
       break;
     case COMMAND_PASS_THROUGH:
+      /*
       var commands = String(value).split(",");
       for (value in commands) 
       {
         writeBlock(commands[value]);
       }
+      */
       break;
     }
   }

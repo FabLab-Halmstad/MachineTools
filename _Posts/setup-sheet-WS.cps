@@ -434,6 +434,7 @@ function writeToolTableAll() //Write tool table, using getSection instead of get
         var tool=sect.getTool();
 
         var showTool=true;
+        var toolOverlap=false; //Flag if two different tools have the same T number
 
         //Check for duplicates
         if(i!=0 && getProperty("hideDuplicates") && tool.number==lastTn) {
@@ -447,12 +448,21 @@ function writeToolTableAll() //Write tool table, using getSection instead of get
                 }
             }
         }
+
+        //Check for non-duplicate tools that have the same T number
+        var overlapFlag="";
+        if(i!=0 && showTool==true && tool.number==lastTn)
+        {
+            toolOverlap=true;
+            overlapFlag="*";
+        }
         
         if(showTool)
         {
-            tableRowS();
+            if(toolOverlap) tableRowS("background-color:rgb(254, 148, 148);");
+            else tableRowS();
                 tableCell(getToolTypeName(tool.type));      //1
-                tableCell("T" + tool.number);               //2
+                tableCell(overlapFlag + "T" + tool.number); //2
                 tableCell("H" + tool.lengthOffset);         //3
                 tableCell("&empty;" + tool.diameter);       //4
                 tableCell(tool.numberOfFlutes);             //5
@@ -536,7 +546,8 @@ function onManualNC(command, value)
     switch (command)
     {
         case COMMAND_COMMENT:
-            cachedMncCMD.push("Comment");
+            cachedMncCMD.push("CMT: ");
+            cachedMncVal.push(value);
         break;
         case COMMAND_STOP:
             cachedMncCMD.push("Stop");

@@ -48,7 +48,9 @@ properties = {
   optionalStop: false, // optional stop
   stopAfterTC: false, //optional stop after tool change
   separateWordsWithSpace: true, // specifies that the words should be separated with a white space
-  zRetract: 0 // the z position for retracting tool G28 not possible
+  absoluteRetract: true, //Controls whether zRetracts is done on cord G53 or G54
+  zRetractABS: 0, // the z position for retracting tool G28 not possible´
+  zRetractREL: 40 //Z pos for retract 
 };
 
 var numberOfToolSlots = 9999;
@@ -472,8 +474,9 @@ function onSection() {
     // retract to safe plane
     retracted = true;
     //TODO add to change log
-    writeBlock("G90 G53 " + gMotionModal.format(0), "Z" + xyzFormat.format(properties.zRetract)); // retract
+    writeBlock("G90 G53 " + gMotionModal.format(0), "Z" + xyzFormat.format(properties.zRetractABS)); // ABS retract - always
     writeBlock(getWOFS()); //Reset wcs after G53 | TODO : a better way?
+
     zOutput.reset();
   }
 
@@ -928,8 +931,17 @@ function onCommand(command) {
 function onSectionEnd() {
   writeBlock(gPlaneModal.format(17));
   //TODO : Add to change log
-  writeBlock("G90 G53 G00 Z0.0"); //Retract Z
-  writeBlock(getWOFS()); //Reset wcs after G53 | TODO : a better way?
+  if(properties.absoluteRetract) 
+  {
+    writeBlock("G90 G53 " + gMotionModal.format(0), "Z" + xyzFormat.format(properties.zRetractABS)); // ABS retract
+    writeBlock(getWOFS()); //Reset wcs after G53 | TODO : a better way?
+  }
+  else 
+  {
+    writeBlock(getWOFS());
+    writeBlock("G90 " + gMotionModal.format(0), "Z" + xyzFormat.format(properties.zRetractREL)); // REL Retract
+  }
+
   forceAny();
 }
 
@@ -942,7 +954,7 @@ function onClose() {
   setWorkPlane(new Vector(0, 0, 0)); // reset working plane
 
   //TODO Add to change log
-  writeBlock("G90 G53 G00 Z0.0"); //Retract Z
+  writeBlock("G90 G53 G00 Z0.0"); //Retract Z - always to the top
   writeBlock("G28"); //Go to park pos
   
   /*
