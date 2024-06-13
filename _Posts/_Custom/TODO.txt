@@ -7,6 +7,8 @@ Change log:
 		-Tool meas
 		-PMSG
 
+	-zRetract: can now be toggled between absolute and relative retract, if the retract from CAM is higher it will overide the the enforced retract.
+
 	HAAS post:
 	-getWOFS added, safeWCS
 	-Meas seq improved
