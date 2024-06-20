@@ -24,4 +24,4 @@ TODO:
 	-Beta test wcs change
 
 	HAAS NC only
-	-When doing meas_all, it includes other stuff like comments, pass-through etc
+	-Sometimes the ending X move is outside of range
