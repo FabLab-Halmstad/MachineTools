@@ -568,7 +568,15 @@ function onManualNC(command, value)
             cachedMncCMD.push("Clean");
         break;
         case COMMAND_ACTION:
-            cachedMncCMD.push("-");
+            cachedMncCMD.push("A: ");
+            cachedMncVal.push(value);
+        break;
+        case COMMAND_PRINT_MESSAGE:
+            cachedMncCMD.push("P: ");
+            cachedMncVal.push(value);
+        break;
+        case COMMAND_DISPLAY_MESSAGE:
+            cachedMncCMD.push("PD: ");
             cachedMncVal.push(value);
         break;
         case COMMAND_ALARM:
@@ -578,7 +586,7 @@ function onManualNC(command, value)
             cachedMncCMD.push("Alert");
         break;
         case COMMAND_PASS_THROUGH:
-            cachedMncCMD.push("-");
+            cachedMncCMD.push("PT: ");
             cachedMncVal.push(value);
         break;
     }

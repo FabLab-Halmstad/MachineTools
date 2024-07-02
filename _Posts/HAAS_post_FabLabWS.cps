@@ -650,7 +650,13 @@ Supported:
 
 */
 
-//Get first WCS
+var forceSafeTool=false;
+function forceSafe()
+{
+  forceSafeTool=true;
+}
+
+//Returns wcs of first section
 function getWOFS()
 {
   var fSec=getSection(0);
@@ -799,6 +805,53 @@ function engraveTextMLine(xVal, yVal, zVal, chrHeight, engraveText, tNum, hNum, 
 }
 */
 
+function parkMsg(msg)
+{
+  if(typeof msg === "undefined") msg="Machine parked";
+
+  writeBlock("M09"); //Turn of coolant
+  writeBlock("M05"); //Turn of spindle
+  writeBlock("G90");
+  writeBlock("G53 G00 Z110.0");
+  writeBlock("G53 G00 Y0.0 X-279.0");
+
+  writeBlock("M00");
+  writeComment(msg);
+  writeBlock("");
+
+  writeBlock("G53 G00 Z0.0");
+  writeBlock(getWOFS());
+  forceSafe(); //Force tool change on next
+}
+
+function prepareTap(toolNum)
+{
+  var defaultTool=10;
+  if(typeof toolNum === "undefined") toolNum=defaultTool;
+
+  writeBlock("\n");
+  writeComment("TAP PREP");
+
+  //Turn of coolant and spindle
+  writeBlock("M09"); 
+  writeBlock("M05");
+
+  //Change tool
+  writeBlock("T" + toolNum + " M06");
+  writeBlock("G90");
+  writeBlock("G53 G00 Z110.0");
+
+  //Stop
+  writeBlock("M00");
+  writeBlock("TAP");
+  writeBlock("");
+
+  //Return
+  writeBlock("G53 G00 Z0.0");
+  writeBlock(getWOFS());
+  forceSafe(); //Force tool change on next
+}
+
 function onManualNC(command, value) {
   switch (command) {
   case COMMAND_COMMENT: //Write comment to gcode
@@ -855,12 +908,24 @@ function onManualNC(command, value) {
     }
     */
 
+    //Tag tap
+    var tapCmd=String(value).split("("); //Split string
+    if(value=="tap")
+    {
+      prepareTap();
+    }
+    else if(tapCmd[0]=="tap") //Catch tap with tool specified
+    {
+      var toolVal=tapCmd[1].replace(")",""); //Remove end ")"
+      prepareTap(Number(toolVal));
+    }
+
 	break;
   case COMMAND_PRINT_MESSAGE:
-	  writeComment(value);
+	  parkMsg(value);
 	break;
   case COMMAND_DISPLAY_MESSAGE:
-    writeComment(value);
+    parkMsg(value);
   break;
   case COMMAND_ALARM:
     writeComment("Alarm");
@@ -1486,8 +1551,11 @@ function onSection() {
 
   var insertToolCall = isFirstSection() ||
     currentSection.getForceToolChange && currentSection.getForceToolChange() ||
+    forceSafeTool ||
     (tool.number != getPreviousSection().getTool().number);
   
+  if(forceSafeTool) forceSafeTool=false; //TODO changelog
+
   retracted = false;
   var zIsOutput = false; // true if the Z-position has been output, used for patterns
 
