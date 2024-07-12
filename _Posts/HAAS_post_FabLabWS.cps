@@ -843,8 +843,8 @@ function prepareTap(toolNum)
 
   //Stop
   writeBlock("M00");
-  writeBlock("TAP");
-  writeBlock("");
+  writeComment("TAP");
+  writeln("");
 
   //Return
   writeBlock("G53 G00 Z0.0");
