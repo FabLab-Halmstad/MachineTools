@@ -223,6 +223,13 @@ function onOpen() {
   }
 }
 
+//Force tool change on next
+var forceSafeTool=false;
+function forceSafe()
+{
+  forceSafeTool=true;
+}
+
 function getWOFS()
 {
   var fSec=getSection(0);
@@ -234,7 +241,6 @@ function getWOFS()
 //Action tags
 const toolMeasTag=["MEAS_1","MEAS_2","MEAS_3","MEAS_4","MEAS_5","MEAS_6"];
 var toolMeasAllTag="MEAS_ALL";
-var parkMsgTag="PMSG";
 
 function autToolMeas(toolNum)
 {
@@ -268,12 +274,13 @@ function parkMsg(msg)
   writeComment("Parking");
   writeBlock("G90"); //Absolute
   writeBlock("G53 G00 Z0.0"); //Retract
-  writeBlock("G28"); //Go to park
+  writeBlock("M05"); //Stop spindle
+  writeBlock("G28"); //Park
 
-  writeBlock("M05");
-  writeBlock("ASKBOOL\"" + msg + "\""); //Display message
-  writeBlock("M03"); //TODO : Spin direction?
+  writeBlock("ASKBOOL\"" + msg + "\""); //Stop and display message
+  
   writeBlock(getWOFS()); //Reset back WCS
+  forceSafe();
 }
 
 function onComment(message) {
@@ -297,17 +304,10 @@ function onManualNC(command, value) {
     writeBlock("G79");
 	break;
   case COMMAND_VERIFY: //Verify the work area, tool breakage etc. 
-    writeComment("Verify");
-    writeBlock("G90 G53 G00 Z0.0");
-    writeBlock("ASKBOOL\"Verify work area\"");
-    writeBlock(getWOFS()); //Set the wcs back after manual-nc
+    parkMsg("VERIFY");
 	break;
   case COMMAND_CLEAN: //Clean the work area
-    writeComment("Clean");
-    writeBlock("G90 G53 G00 Z0.0");
-    writeBlock("G90 G53 G00 X1000.0 Y1000.0");
-    writeBlock("ASKBOOL\"Clean work area\"");
-    writeBlock(getWOFS()); //Set the wcs back after manual-nc
+    parkMsg("CLEAN");
 	break;
   case COMMAND_ACTION: //Action, use tag to select which
     //Tag MEAS
@@ -316,20 +316,12 @@ function onManualNC(command, value) {
       if(value==toolMeasTag[i]) autToolMeas(i+1);
     }
     if(value==toolMeasAllTag) autToolMeasAll();
-
-    //Tag PMSG (Park - message)
-    var cmd=String(value).split("(");
-    if(cmd[0]==parkMsgTag)
-    {
-      var msgVal=cmd[1].replace(")","");
-      parkMsg(msgVal);
-    }
 	break;
   case COMMAND_PRINT_MESSAGE:
-	  writeBlock("PRINT\"" + value + "\"");
+	  parkMsg(value);
 	break;
   case COMMAND_DISPLAY_MESSAGE:
-    writeBlock("ASKBOOL\"" + value + "\"");
+    parkMsg(value);
   break;
   case COMMAND_ALERT:
 	  writeBlock("ASKBOOL\"ALERT!\"");
@@ -457,7 +449,10 @@ function getWorkPlaneMachineABC(workPlane) {
 function onSection() {
   var insertToolCall = isFirstSection() ||
     currentSection.getForceToolChange && currentSection.getForceToolChange() ||
-    (tool.number != getPreviousSection().getTool().number);
+    (tool.number != getPreviousSection().getTool().number) ||
+    forceSafeTool;
+
+  if(forceSafeTool) forceSafeTool=false;
   
   var retracted = false; // specifies that the tool has been retracted to the safe plane
   var newWorkOffset = isFirstSection() ||
