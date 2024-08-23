@@ -97,7 +97,7 @@ properties=
     }
 };
 
-var wsLogoWebPath="https://raw.githubusercontent.com/FabLab-Halmstad/MachineTools/main/_Posts/_Custom/FablabLogoBW_Text.png";
+var wsLogoWebPath="https://raw.githubusercontent.com/FabLab-Halmstad/MachineTools/main/_Posts/_src/FablabLogoBW_Text.png";
 
 var xyzFormat = createFormat({decimals:5, forceDecimal:true});
 var feedFormat = createFormat({decimals:(unit == MM ? 3 : 5)});
