@@ -97,6 +97,8 @@ properties=
     }
 };
 
+var wsLogoWebPath="https://raw.githubusercontent.com/FabLab-Halmstad/MachineTools/main/_Posts/_Custom/FablabLogoBW_Text.png";
+
 var xyzFormat = createFormat({decimals:5, forceDecimal:true});
 var feedFormat = createFormat({decimals:(unit == MM ? 3 : 5)});
 var toolFormat = createFormat({decimals:0});
@@ -597,8 +599,12 @@ function onOpen() //On init of post
     htmlSetup();
 
     //WS logo
+    writeImg("padding-bottom:15px",wsLogoWebPath,"WS Logo","40%");
+
+    /*
     var wsLogoPath = findFile("_Custom/FablabLogoBW_Text.png");
     writeImg("padding-bottom:15px",getImageAsImgSrc(wsLogoPath),"WS Logo","40%");
+    */
 
     //Title
     if(getProperty("showTitleBlock"))
