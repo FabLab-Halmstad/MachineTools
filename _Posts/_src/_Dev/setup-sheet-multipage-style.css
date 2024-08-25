@@ -1,0 +1,100 @@
+:root
+{
+    --backingColor: rgb(79, 79, 79);
+    --pageColor: white;
+
+    --font1: Arial, Helvetica, sans-serif;
+    --fontSizeHead1: 30px;
+    --fontSizeHead2: 18px;
+    --fontSizeBody1: 16px;
+    --fontSizeFoot1: 12px;
+}
+
+body {
+    margin: 0;
+    padding: 40px 0;
+    background-color: var(--backingColor);
+    font-family: var(--font1);
+    display: flex;
+    justify-content: center;
+
+    -webkit-print-color-adjust:exact !important;
+    print-color-adjust:exact !important;
+}
+* {
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+}
+
+/*Document container*/
+.document {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+/*Sheet container*/
+.page-body {
+    width: 210mm;
+    height: 297mm;
+    padding: 20mm;
+    margin-bottom: 10mm;
+    background-color: var(--pageColor);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    box-sizing: border-box;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/*Sheet header / title*/
+.page-header {
+    text-align: center;
+    font-size: var(--fontSizeHead1);
+    margin-bottom: 10mm;
+}
+
+/*Sheet content*/
+.page-sub {
+    font-size: var(--fontSizeBody1);
+
+    flex-grow: 1;
+}
+
+.page-footer {
+    text-align: center;
+    font-size: var(--fontSizeFoot1);
+
+    margin-top: 20mm;
+}
+
+/*Print page settings*/
+@page {
+    size: A4;
+    margin: 0;
+}
+
+/*Print layout settings*/
+@media print {
+    body, html {
+        margin: 0;
+        padding: 0;
+        background-color: var(--pageColor);
+    }
+
+    .page-body {
+        box-shadow: none;
+        margin: 0;
+        page-break-after: auto !important;
+    }
+
+    .page-footer {
+        margin-top: 20mm;
+    }
+
+    .document {
+        align-items: flex-start;
+    }
+}
