@@ -50,8 +50,29 @@ properties = {
   separateWordsWithSpace: true, // specifies that the words should be separated with a white space
   absoluteRetract: true, //Controls whether zRetracts is done on cord G53 or G54
   zRetractABS: 0, // the z position for retracting tool G28 not possible´
-  zRetractREL: 40 //Z pos for retract 
+  zRetractREL: 40, //Z pos for retract
+  stopAtStart: false //Insert optional stop at start of program after tool change
 };
+
+//Definitions
+propertyDefinitions = {
+  absoluteRetract: {group:0},
+  zRetractABS: {description:"ABS mode retract height - 0 at top always", group:2},
+  zRetractREL: {description:"REL mode retract height - relative to workOffset - set to 0 to let program dictate", group:2},
+  stopAtStart: {title:"Stop at start", description:"Insert optional stop at start of program, after tool change", group:0, type:"boolean"},
+  optionalStop: {title:"ToolChange-stop before", description:"Stop before tool change", group:0, type:"boolean"},
+  stopAfterTC: {title:"ToolChange-stop after", description:"Stop after tool change", group:0, type:"boolean"},
+  writeMachine: {group:1},
+  writeTools: {group:1},
+  preloadTool: {group:1},
+  showSequenceNumbers: {group:1},
+  sequenceNumberStart: {group:1},
+  sequenceNumberIncrement: {group:1},
+  separateWordsWithSpace: {group:1}
+};
+
+//Globals
+var forceSafeTool=false;
 
 var numberOfToolSlots = 9999;
 
@@ -224,18 +245,26 @@ function onOpen() {
 }
 
 //Force tool change on next
-var forceSafeTool=false;
 function forceSafe()
 {
   forceSafeTool=true;
 }
 
+//Legacy - not used
 function getWOFS()
 {
   var fSec=getSection(0);
   var fwofs=fSec.workOffset;
   if(fwofs==0) fwofs=1;
   return gFormat.format(53+fwofs);
+}
+
+function formatWCS(wcsNum) //Format wcs to iso standard
+{
+  if(wcsNum==0) wcsNum=1; //If default change to 1
+  wcsNum+=53; //Add base off G53
+  
+  return gFormat.format(wcsNum); //Return wcs
 }
 
 //Action tags
@@ -279,8 +308,7 @@ function parkMsg(msg)
 
   writeBlock("ASKBOOL\"" + msg + "\""); //Stop and display message
   
-  writeBlock(getWOFS()); //Reset back WCS
-  forceSafe();
+  forceSafe(); //Force tool change on next
 }
 
 function onComment(message) {
@@ -469,10 +497,26 @@ function onSection() {
     // retract to safe plane
     retracted = true;
     //TODO add to change log
-    writeBlock("G90 G53 " + gMotionModal.format(0), "Z" + xyzFormat.format(properties.zRetractABS)); // ABS retract - always
-    writeBlock(getWOFS()); //Reset wcs after G53 | TODO : a better way?
+    writeBlock("G90 G53 " + gMotionModal.format(0), "Z0.0"); //Start of prog / tool change -> Retract to 0 - always
+    if(!insertToolCall) writeBlock(formatWCS(currentSection.workOffset)); //Reset wcs if there is no tool change
 
     zOutput.reset();
+  }
+  else
+  {
+    //TODO : Add to change log
+    if(properties.absoluteRetract) 
+    {
+      retracted=true; //TODO : retracted might not be necessary, forces g43
+      writeBlock("G90 G53 " + gMotionModal.format(0), "Z" + xyzFormat.format(properties.zRetractABS)); // ABS retract
+      writeBlock(formatWCS(currentSection.workOffset)); //Reset to section wcs
+      zOutput.reset();
+    }
+    else if(properties.zRetractREL>0)
+    {
+      writeBlock("G90 "+ formatWCS(currentSection.workOffset) + " " + gMotionModal.format(0), "Z" + xyzFormat.format(properties.zRetractREL)); // REL Retract
+      zOutput.reset();
+    }
   }
 
   writeln("");
@@ -585,6 +629,16 @@ function onSection() {
         currentWorkOffset = workOffset;
       }
     }
+  }
+
+  //TODO : change log add
+  if(isFirstSection() && properties.stopAtStart) //Stop at start of program
+  {
+    writeln("");
+    writeBlock("G90 G0 X0.0 Y0.0"); //Rapid to (0,0)
+    onCommand(COMMAND_OPTIONAL_STOP); //Insert optional stop
+    writeComment("Program paused");
+    writeln("");
   }
 
   forceXYZ();
@@ -925,17 +979,6 @@ function onCommand(command) {
 
 function onSectionEnd() {
   writeBlock(gPlaneModal.format(17));
-  //TODO : Add to change log
-  if(properties.absoluteRetract) 
-  {
-    writeBlock("G90 G53 " + gMotionModal.format(0), "Z" + xyzFormat.format(properties.zRetractABS)); // ABS retract
-    writeBlock(getWOFS()); //Reset wcs after G53 | TODO : a better way?
-  }
-  else 
-  {
-    writeBlock(getWOFS());
-    writeBlock("G90 " + gMotionModal.format(0), "Z" + xyzFormat.format(properties.zRetractREL)); // REL Retract
-  }
 
   forceAny();
 }
