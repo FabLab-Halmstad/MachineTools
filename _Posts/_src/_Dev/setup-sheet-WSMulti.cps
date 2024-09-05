@@ -101,6 +101,11 @@ var toolCellCount=0;
 var pathCellCount=0;
 var cSheet=1; //Current sheet
 
+var id_wcs="id_WCS";
+var id_nSetups="id_nSETUPS";
+var id_setupHeader="id_SETUPHEAD";
+const id_setupNotes=["sn_r0","sn_r1","sn_r2","sn_r3","sn_r4","sn_r5","sn_r6","sn_r7","sn_r8","sn_r9"];
+
 //Length of objects for detecting if content is spilling over to next page, unit: mm
 var maxContentLength=235;
 var logoLen=29; //Length of logo on first page
@@ -110,6 +115,8 @@ var tableHeadLen=11; //Table header length
 var toolTableCellLen=10; //Tool table cell length
 var pathTableCellLen=5; //Path table cell length
 var pinchDist=22; //Least distance to write path table on first page
+
+var nNoteRows=5; //Number of note rows
 
 var wsLogoWebPath="https://raw.githubusercontent.com/FabLab-Halmstad/MachineTools/main/_Posts/_src/FablabLogoBW_Text.png";
 
@@ -155,11 +162,14 @@ function divE() //div end
     writeln("</div>");
 }
 
-function divSE(dClass, dText, dStyle) //div start and end
+function divSE(dClass, dText, dStyle, dIdent) //div start and end
 {
-    write("<div class=\"" + dClass + "\"");
-    if(typeof dStyle !== "undefined") write(" style=\"" + dStyle + "\">");
-    else write(">");
+    write("<div");
+    if(dClass!="") write(" class=\"" + dClass + "\"");
+    if(typeof dStyle !== "undefined" && dStyle != "") write(" style=\"" + dStyle + "\"");
+    if(typeof dIdent !== "undefined") write(" id=\"" + dIdent + "\"");
+    write(">");
+
     if(typeof dText !== "undefined") write(dText);
 
     writeln("</div>");
@@ -329,21 +339,6 @@ function getJobTime()
     totalJobTime += totalRapidDist / getProperty("rapidFeed") * 60;
 
     return totalJobTime;
-}
-
-function printNotes()
-{
-    //Check if op has notes
-    if(hasParameter("job-notes"))
-    {
-        var opNotes=getParameter("job-notes");
-        const splitOpNotes=opNotes.split("\n"); //Split on newline
-        aLen=splitOpNotes.length;
-        for(var i=0;i<aLen;++i) writeln(splitOpNotes[i] + "<br/>"); //Add line breaks
-
-        return true;
-    }
-    else return false;
 }
 
 function writeToolTable() //Write html tool table - legacy
@@ -707,6 +702,23 @@ function incPCellCount()
     }
 }
 
+const globalNotes=[];
+
+var nSetups=0;
+
+function onParameter(name,value)
+{
+    if(name=="job-notes")
+    {
+       globalNotes.push(value); //Add notes to array
+    }
+
+    if(name=="job-description")
+    {
+        nSetups++;
+    }
+}
+
 function onOpen() //On init of post
 {
     //Add up start blocks
@@ -756,8 +768,22 @@ function onSection() //On start of section
 
 }
 
+const allWorkOfs=[];
+
 function onSectionEnd() //On end of section
 {
+    //Get all wcs
+    var dup=false;
+    for(var i=0;i<allWorkOfs.length;++i) 
+    {
+        if(allWorkOfs[i]==currentSection.workOffset) 
+        {
+            dup=true;
+            break;
+        }
+    }
+    if(!dup) allWorkOfs.push(currentSection.workOffset);
+
     if(isFirstSection())
     {
         var workpiece=getWorkpiece();
@@ -771,7 +797,7 @@ function onSectionEnd() //On end of section
         if(getProperty("writeSetup"))
         {
             divS("contentContainer");
-                divSE("contentHeader","SETUP");
+                divSE("contentHeader","SETUP","",id_setupHeader);
                 divS("setupInfoContainer");
                     divS("setupInfo");
                         divS("setupInfoMatHeadCont");
@@ -793,13 +819,13 @@ function onSectionEnd() //On end of section
                         divE();
 
                         divS("setupInfoWCSCont");
-                            divSE("setupInfoWCS","Work offset: " + formatWorkOfs(cWorkOfs));
+                            divSE("setupInfoWCS","WCS","",id_wcs); //Write wcs ID
                         divE();
 
                         divSE("setupInfoMatHead","SETUP NOTES");
                         divS("setupInfoNotes");
                             writeln("All units are metric. <br/>");
-                            printNotes(); //Print OP notes
+                            for(var i=0;i<nNoteRows;++i) divSE("","","",id_setupNotes[i]); //Write all lines of notes with IDs
                         divE();
                     divE();
                     modelImg(); //Display setup image
@@ -860,6 +886,51 @@ function onSectionEnd() //On end of section
     }
 }
 
+//Write inline script portion
+function htmlScript()
+{
+    writeln("<script>");
+
+    //nSetups
+    if(nSetups>1)
+    {
+        writeln("document.getElementById(\"" + id_setupHeader + "\").textContent=\"" + "SETUP  -  " + nSetups + " TOTAL" + "\";");
+    }
+
+    //WCS
+    var wcsStr="";
+    for(var i=0;i<allWorkOfs.length;++i) wcsStr+=formatWorkOfs(allWorkOfs[i]) + ", ";
+    wcsStr=wcsStr.substring(0,wcsStr.length-2);
+    writeln("document.getElementById(\"" + id_wcs + "\").textContent=\"" + wcsStr + "\";");
+
+    //Op notes
+    if(hasParameter("job-notes"))
+    {
+        //Add together setup notes and split them into rows
+        const allNoteRows=[];
+        for(var i=0;i<globalNotes.length;++i)
+        {
+            //Add split and trimmed note to allnoterows
+            const aSplit=globalNotes[i].split("\n");
+            for(var n=0;n<aSplit.length;++n) allNoteRows.push(aSplit[n].trim());
+        }
+
+        //Check how many rows
+        var rowCount=0;
+        if(allNoteRows.length>nNoteRows) 
+        {
+            allNoteRows[nNoteRows-1]+="..."; //If there are more notes than rows add dots to end
+            rowCount=nNoteRows;
+        }
+        else rowCount=allNoteRows.length;
+        
+        //Print notes
+        for(var i=0;i<rowCount;++i) writeln("document.getElementById(\"" + id_setupNotes[i] + "\").textContent=\"" + allNoteRows[i] + "\";");
+    }
+
+    writeln("</script>");
+}
+
 function onClose() //On close of post
 {
     if(showDebug)
@@ -885,6 +956,7 @@ function onClose() //On close of post
     tableE();
     divE();
 
+    htmlScript();
     htmlEnd();
 }
 
