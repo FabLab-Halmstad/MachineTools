@@ -108,13 +108,14 @@ const id_setupNotes=["sn_r0","sn_r1","sn_r2","sn_r3","sn_r4","sn_r5","sn_r6","sn
 
 //Length of objects for detecting if content is spilling over to next page, unit: mm
 var maxContentLength=235;
+var headPadding=8; //Padding between content
 var logoLen=29; //Length of logo on first page
 var topTableLen=17; //Top table length
 var setupInfoLen=67; //Setup info length
 var tableHeadLen=11; //Table header length
 var toolTableCellLen=10; //Tool table cell length
 var pathTableCellLen=5; //Path table cell length
-var pinchDist=22; //Least distance to write path table on first page
+var pinchDist=30; //Least distance to write path table on first page
 
 var nNoteRows=5; //Number of note rows
 
@@ -537,17 +538,21 @@ function writeToolTableAll() //Write tool table, using getSection instead of get
 
 function writePathTableHead() //Write html toolpath table
 {
-    //Check if distance left on first sheet is small enough that it would be better to start on next sheet
-    if(cSheet == 1 && (maxContentLength-contentLength) < pinchDist)
+    //Check if distance left on sheet is small enough that it would be better to start on next
+    if((maxContentLength-(contentLength + pathCellCount*pathTableCellLen)) < pinchDist)
     {
         contentLength=0;
+        pathCellCount=0;
         newSheet();
     }
 
     contentLength+=tableHeadLen;
 
+    var cSetup="";
+    if(hasParameter("job-description")) cSetup=getParameter("job-description");
+
     divS("contentContainer","border:none;");
-        divSE("contentHeader","TOOLPATHS","border: 1px solid black; border-bottom:none;");
+        divSE("contentHeader","TOOLPATHS - " + cSetup,"border: 1px solid black; border-bottom:none;");
         tableS("pathTable");
             tableRowS();
                 tableHead("Strategy");
@@ -770,6 +775,8 @@ function onSection() //On start of section
 
 const allWorkOfs=[];
 
+var lastSetup="";
+
 function onSectionEnd() //On end of section
 {
     //Get all wcs
@@ -786,6 +793,10 @@ function onSectionEnd() //On end of section
 
     if(isFirstSection())
     {
+        //Get first setup
+        if(hasParameter("job-description")) lastSetup=getParameter("job-description");
+        else lastSetup="OP1";
+
         var workpiece=getWorkpiece();
         var stockDim=Vector.diff(workpiece.upper, workpiece.lower);
         var lower = new Vector(getParameter("part-lower-x"), getParameter("part-lower-y"), getParameter("part-lower-z"));
@@ -838,6 +849,22 @@ function onSectionEnd() //On end of section
     }
     if(getProperty("writePaths"))
     {
+        //Check if setup is same, if not create new table
+        if(hasParameter("job-description"))
+        {
+            var newSetup=getParameter("job-description");
+            if(lastSetup!=newSetup)
+            {
+                //End last and start new table for next setup
+                lastSetup=newSetup;
+                contentLength+=headPadding;
+
+                tableE();
+                divE();
+                writePathTableHead();
+            }
+        }
+
         //Write Manual nc
         var mncCutof=16; //Cuts of the value after this many charecters
         if(cachedMncCMD.length && !getProperty("hideMnc"))
