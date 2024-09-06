@@ -1,0 +1,289 @@
+:root
+{
+  --gray1: rgb(238, 238, 238);
+  --gray2: rgb(204, 204, 204);
+  --gray3: rgb(233, 233, 233);
+  --lightblack1: rgb(176, 176, 176);
+
+  --font1: arial, sans-serif;
+  --fontSizeHead1: 14px;
+  --fontSizeBody1: 12px;
+}
+
+body {
+    background: rgb(85, 85, 85);
+    -webkit-print-color-adjust:exact !important;
+    print-color-adjust:exact !important;
+
+    width: 230mm;
+    height: 100%;
+    margin: 0 auto;
+    padding: 0;
+    font-size: 12pt;
+    
+  }
+  * {
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+  }
+  .main-page {
+    display:flex;
+    flex-direction:column;
+    flex-grow: 1;
+
+    width: 210mm;
+    min-height: 297mm;
+    margin: 10mm auto;
+    background: white;
+    box-shadow: 0 0 0.5cm rgba(0,0,0,0.5);
+  }
+  .sub-page {
+    padding: 1cm;
+    height: 100%;
+  }
+  @page {
+    size: A4;
+    margin-top: 50px;
+    margin-bottom: 50px;
+    background: white;
+  }
+  @media print {
+    html, body {
+      -webkit-print-color-adjust: exact;
+      width: 210mm;
+      height: 100%;   
+    }
+    .main-page {
+      margin: 0;
+      border: initial;
+      border-radius: initial;
+      width: initial;
+      min-height: initial;
+      box-shadow: initial;
+      background: white;
+    }
+  }
+
+  table.topTable
+  {
+    font-family: arial, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  table.topTable td, table.topTable th
+  {
+    border: 1px solid #717171;
+    text-align: left;
+    padding: 6px;
+  }
+
+  table.toolTable
+  {
+    font-family: var(--font1);
+    font-size: small;
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  table.toolTable th
+  {
+    text-align: center;
+    font-weight: bold;
+    padding: 2px;
+    border: 1px solid black;
+  }
+
+  table.toolTable td
+  {
+    text-align: left;
+    border: 1px solid black;
+    padding: 2px;
+  }
+
+  table.toolTable tr:nth-child(even)
+  {
+    background-color: rgb(212, 212, 212);
+  }
+
+  table.pathTable
+  {
+    font-family: var(--font1);
+    font-size: small;
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  table.pathTable th
+  {
+    text-align: center;
+    font-weight: bold;
+    padding: 2px;
+    border: 1px solid black;
+  }
+
+  table.pathTable td
+  {
+    text-align: left;
+    border: 1px solid black;
+    padding: 2px;
+  }
+
+  table.pathTable tr:nth-child(even)
+  {
+    background-color: rgb(212, 212, 212);
+  }
+
+  .contentHeader
+  {
+    display: flex;
+    flex-wrap: nowrap;
+
+    font-family: arial, sans-serif;
+    text-align: left;
+    font-size: 14px;
+    padding: 3px;
+    padding-left: 10px;
+    font-weight: bold;
+
+    background-color: #c1c1c1;
+    border-bottom: 1px solid black;
+  }
+
+  .contentContainer
+  {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+
+    background-color: var(--gray1);
+    margin-top: 30px;
+    border: 1px solid black;
+  }
+
+  .setupInfoContainer
+  {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+  }
+
+  .setupInfo
+  {
+    display: flex;
+    flex-direction: column;
+    height: 230px;
+    flex-grow: 1;
+  }
+
+  .setupInfoMatHeadCont
+  {
+    display:flex;
+    flex-direction: row;
+
+    width:100%;
+  }
+
+  .setupInfoMatHead
+  {
+    flex-grow: 1;
+
+    font-family: var(--font1);
+    font-size: var(--fontSizeHead1);
+    font-weight: bold;
+    text-align:start;
+
+    padding-top: 10px;
+    padding-bottom:1px;
+    padding-left:20px;
+
+    border-bottom:1px solid black;
+  }
+
+  .setupInfoMatContCont
+  {
+    display: flex;
+    flex-direction: row;
+
+    width:100%;
+  }
+
+  .setupInfoMatCont
+  {
+    display:flex;
+    flex-direction:column;
+
+    flex-grow:1;
+  }
+
+  .setupInfoMatBlock
+  {
+    font-family: var(--font1);
+    font-size: var(--fontSizeBody1);
+    font-weight: normal;
+    text-align:center;
+
+    padding-top:3px;
+    padding-bottom:3px;
+
+    border-right:1px solid black;
+    border-bottom:1px solid black;
+  }
+
+  .setupInfoWCSCont
+  {
+    display:flex;
+    flex-direction:column;
+    justify-content:end;
+
+    width:100%;
+    height:70px;
+
+    background-color:var(--lightblack1);
+  }
+
+  .setupInfoWCS
+  {
+    font-family:var(--font1);
+    font-size:var(--fontSizeBody1);
+    font-weight:bold;
+    text-align:center;
+
+    padding:5px;
+
+    border-bottom:1px dashed black;
+  }
+
+  .setupInfoNotes
+  {
+    font-family:var(--font1);
+    font-size:var(--fontSizeBody1);
+    font-weight:normal;
+    text-align:start;
+
+    padding:5px;
+
+    width:100%;
+    height:100%;
+  }
+
+  .footerCont
+  {
+    display:flex;
+    flex-direction: column;
+    justify-content: end;
+    flex-grow: 1;
+
+    height:100%;
+    width:100%;
+  }
+
+  .camSysFooter
+  {
+    font-family: var(--font1);
+    font-size: var(--fontSizeBody1);
+    font-weight:normal;
+    text-align:center;
+    padding:10px;
+  }

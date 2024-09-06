@@ -1,25 +1,26 @@
 /**
  * Fablab WS Setup sheet
  * 
- * Run within cam to produce a html setup page
+ * Post to produce a html setup page
  * 
  * Benjamin Solar
- * 23-03-2024
+ * 06-09-2024
  * 
  * TODO:
- * Pattern support - cached
- * writeToolsAll - BETA
- * Hightlight tools with the same T number
- * TOOL B - layout - show tools with feed and speed
- * Option for inverting image? That way it might be easier to view. 
+ * Page number
+ * Polish contentLength
+ * Polish tooltable -> standardize table cell size
+ * Add flute length to tooltable
+ * Group settings
+ *
  */
 
-description="WS Setup-sheet";
+description="Setup-sheet-WS";
 vendor = "FabLabWS";
 vendorUrl = "hh.se";
 certificationLevel = 2;
 
-longDescription = "Fablab WS Setup sheet";
+longDescription = "FabLab WS Setup-sheet";
 
 capabilities = CAPABILITY_SETUP_SHEET;
 extension = "html";
@@ -97,7 +98,36 @@ properties=
     }
 };
 
+//Sheet globals
+var contentLength=0; //Length of content on current page
+var toolCellCount=0;
+var pathCellCount=0;
+var cSheet=1; //Current sheet
+
+var id_wcs="id_WCS";
+var id_nSetups="id_nSETUPS";
+var id_setupHeader="id_SETUPHEAD";
+const id_setupNotes=["sn_r0","sn_r1","sn_r2","sn_r3","sn_r4","sn_r5","sn_r6","sn_r7","sn_r8","sn_r9"];
+
+//Length of objects for detecting if content is spilling over to next page, unit: mm
+var maxContentLength=235;
+var headPadding=8; //Padding between content
+var logoLen=29; //Length of logo on first page
+var topTableLen=17; //Top table length
+var setupInfoLen=67; //Setup info length
+var tableHeadLen=11; //Table header length
+var toolTableCellLen=10; //Tool table cell length
+var pathTableCellLen=5; //Path table cell length
+var pinchDist=30; //Least distance to write path table on first page
+
+var nNoteRows=5; //Number of note rows
+
 var wsLogoWebPath="https://raw.githubusercontent.com/FabLab-Halmstad/MachineTools/main/_Posts/_src/FablabLogoBW_Text.png";
+
+//Debug
+var showDebug=false;
+var paddTools=6;
+var paddPaths=200;
 
 var xyzFormat = createFormat({decimals:5, forceDecimal:true});
 var feedFormat = createFormat({decimals:(unit == MM ? 3 : 5)});
@@ -136,11 +166,14 @@ function divE() //div end
     writeln("</div>");
 }
 
-function divSE(dClass, dText, dStyle) //div start and end
+function divSE(dClass, dText, dStyle, dIdent) //div start and end
 {
-    write("<div class=\"" + dClass + "\"");
-    if(typeof dStyle !== "undefined") write(" style=\"" + dStyle + "\">");
-    else write(">");
+    write("<div");
+    if(dClass!="") write(" class=\"" + dClass + "\"");
+    if(typeof dStyle !== "undefined" && dStyle != "") write(" style=\"" + dStyle + "\"");
+    if(typeof dIdent !== "undefined") write(" id=\"" + dIdent + "\"");
+    write(">");
+
     if(typeof dText !== "undefined") write(dText);
 
     writeln("</div>");
@@ -312,21 +345,6 @@ function getJobTime()
     return totalJobTime;
 }
 
-function printNotes()
-{
-    //Check if op has notes
-    if(hasParameter("job-notes"))
-    {
-        var opNotes=getParameter("job-notes");
-        const splitOpNotes=opNotes.split("\n"); //Split on newline
-        aLen=splitOpNotes.length;
-        for(var i=0;i<aLen;++i) writeln(splitOpNotes[i] + "<br/>"); //Add line breaks
-
-        return true;
-    }
-    else return false;
-}
-
 function writeToolTable() //Write html tool table - legacy
 {
     divS("contentContainer","border:none;");
@@ -363,6 +381,29 @@ function writeToolTable() //Write html tool table - legacy
             }
         tableE();
     divE();
+}
+
+function writeToolTableHead()
+{
+    contentLength+=tableHeadLen;
+
+    //Table header
+    divS("contentContainer","border:none;");
+    divSE("contentHeader","TOOLS","border: 1px solid black; border-bottom:none;");
+    tableS("toolTable");
+        tableRowS();
+            tableHead("Type");
+            tableHead("T");
+            tableHead("H");
+            tableHead("DIA");
+            tableHead("NoF");
+            tableHead("Desc.");
+            tableHead("CMT");
+            tableHead("BL");
+            tableHead("Shaft");
+            tableHead("Vendor");
+            tableHead("ID");
+        tableRowE();
 }
 
 function writeToolTableAll() //Write tool table, using getSection instead of getToolTable - BETA
@@ -405,23 +446,7 @@ function writeToolTableAll() //Write tool table, using getSection instead of get
         }
     }
 
-    //Table header
-    divS("contentContainer","border:none;");
-        divSE("contentHeader","TOOLS","border: 1px solid black; border-bottom:none;");
-        tableS("toolTable");
-            tableRowS();
-                tableHead("Type");
-                tableHead("T");
-                tableHead("H");
-                tableHead("DIA");
-                tableHead("NoF");
-                tableHead("Desc.");
-                tableHead("CMT");
-                tableHead("BL");
-                tableHead("Shaft");
-                tableHead("Vendor");
-                tableHead("ID");
-            tableRowE();
+    writeToolTableHead();
 
     var lastTn;
     var lastHn;
@@ -475,23 +500,62 @@ function writeToolTableAll() //Write tool table, using getSection instead of get
                 tableCell(tool.vendor);                     //10
                 tableCell(tool.productId);                  //11
             tableRowE();
-
+            
             lastTn=tool.number;
             lastHn=tool.lengthOffset;
             lastDia=tool.diameter;
             lastBl=tool.bodyLength;
             lastDesc=tool.description;
+
+            incTCellCount();
+        }
+    }
+
+    if(showDebug)
+    {
+        for(var i=0;i<=paddTools;++i)
+        {
+            tableRowS();
+                tableCell(((toolCellCount * toolTableCellLen) + contentLength) + "mm"); //1
+                tableCell("DBG");//2
+                tableCell("DBG");//3
+                tableCell("DBG");//4
+                tableCell("DBG");//5
+                tableCell("DBG");//6
+                tableCell("DBG");//7
+                tableCell("DBG");//8
+                tableCell("DBG");//9
+                tableCell("DBG");//10
+                tableCell("DBG");//11
+            tableRowE();
+
+            incTCellCount();
         }
     }
 
         tableE();
     divE();
+
+    contentLength+=(toolCellCount * toolTableCellLen);
 }
 
 function writePathTableHead() //Write html toolpath table
 {
+    //Check if distance left on sheet is small enough that it would be better to start on next
+    if((maxContentLength-(contentLength + pathCellCount*pathTableCellLen)) < pinchDist)
+    {
+        contentLength=0;
+        pathCellCount=0;
+        newSheet();
+    }
+
+    contentLength+=tableHeadLen;
+
+    var cSetup="";
+    if(hasParameter("job-description")) cSetup=getParameter("job-description");
+
     divS("contentContainer","border:none;");
-        divSE("contentHeader","TOOLPATHS","border: 1px solid black; border-bottom:none;");
+        divSE("contentHeader","TOOLPATHS - " + cSetup,"border: 1px solid black; border-bottom:none;");
         tableS("pathTable");
             tableRowS();
                 tableHead("Strategy");
@@ -512,14 +576,16 @@ function htmlSetup()
     "<html> \n" +
     " <head> \n" +
     "<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\"> \n" +
+    "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"> \n" +
     "<style type=\"text/css\"> \n" +
     loadText("setup-sheet-WS-style.css","utf-8") + "\n" +
     "</style> \n" +
     "   <title>Setup sheet</title> \n" +
     " </head> \n" +
     " <body> \n" +
-    "  <div class=\"main-page\"> \n" +
-    "    <div class=\"sub-page\"> \n");
+    "  <div class=\"document\"> \n" +
+    "    <div class=\"page-body\"> \n" +
+    "       <div class=\"page-sub\"> \n");
 }
 
 function htmlEnd()
@@ -529,11 +595,12 @@ function htmlEnd()
     if(hasGlobalParameter("generated-by")) sysGen=getGlobalParameter("generated-by");
     else sysGen="Autodesk CAM";
 
-            divE(); //Sub page
-            divS("footerCont");
+            divE(); //page-sub
+            divS("page-footer");
                 divSE("camSysFooter","Generated by: " + sysGen);
             divE();
-        divE(); //Main page
+        divE(); //page-body
+        divE(); //document
     writeln("</body>");
     writeln("</html>");
 }
@@ -594,17 +661,83 @@ function onManualNC(command, value)
     }
 }
 
+function newSheet() //Closes and creates a new sheet without closing
+{
+    cSheet+=1; //Increment sheet count
+
+    //Generated by:
+    var sysGen="";
+    if(hasGlobalParameter("generated-by")) sysGen=getGlobalParameter("generated-by");
+    else sysGen="Autodesk CAM";
+
+            divE(); //page-sub
+            divS("page-footer");
+                divSE("camSysFooter","Generated by: " + sysGen);
+            divE();
+        divE(); //page-body
+
+        divS("page-body");
+        divS("page-sub");
+}
+
+function incTCellCount()
+{
+    toolCellCount+=1;
+    if(((toolCellCount * toolTableCellLen) + contentLength) >= maxContentLength)
+    {
+        toolCellCount=0;
+        contentLength=0;
+
+        tableE();
+        divE();
+        newSheet();
+        writeToolTableHead();
+    }
+}
+
+function incPCellCount()
+{
+    pathCellCount+=1;
+    if(((pathCellCount * pathTableCellLen) + contentLength) >= maxContentLength)
+    {
+        pathCellCount=0;
+        contentLength=0;
+
+        tableE();
+        divE();
+        newSheet();
+        writePathTableHead();
+    }
+}
+
+const globalNotes=[];
+
+var nSetups=0;
+
+function onParameter(name,value)
+{
+    if(name=="job-notes")
+    {
+       globalNotes.push(value); //Add notes to array
+    }
+
+    if(name=="job-description")
+    {
+        nSetups++;
+    }
+}
+
 function onOpen() //On init of post
 {
+    //Add up start blocks
+    contentLength+=logoLen;
+    if(getProperty("showTitleBlock")) contentLength+=topTableLen;
+    if(getProperty("writeSetup")) contentLength+=setupInfoLen;
+
     htmlSetup();
 
     //WS logo
     writeImg("padding-bottom:15px",wsLogoWebPath,"WS Logo","40%");
-
-    /*
-    var wsLogoPath = findFile("_Custom/FablabLogoBW_Text.png");
-    writeImg("padding-bottom:15px",getImageAsImgSrc(wsLogoPath),"WS Logo","40%");
-    */
 
     //Title
     if(getProperty("showTitleBlock"))
@@ -643,10 +776,30 @@ function onSection() //On start of section
 
 }
 
+const allWorkOfs=[];
+
+var lastSetup="";
+
 function onSectionEnd() //On end of section
 {
+    //Get all wcs
+    var dup=false;
+    for(var i=0;i<allWorkOfs.length;++i) 
+    {
+        if(allWorkOfs[i]==currentSection.workOffset) 
+        {
+            dup=true;
+            break;
+        }
+    }
+    if(!dup) allWorkOfs.push(currentSection.workOffset);
+
     if(isFirstSection())
     {
+        //Get first setup
+        if(hasParameter("job-description")) lastSetup=getParameter("job-description");
+        else lastSetup="OP1";
+
         var workpiece=getWorkpiece();
         var stockDim=Vector.diff(workpiece.upper, workpiece.lower);
         var lower = new Vector(getParameter("part-lower-x"), getParameter("part-lower-y"), getParameter("part-lower-z"));
@@ -658,7 +811,7 @@ function onSectionEnd() //On end of section
         if(getProperty("writeSetup"))
         {
             divS("contentContainer");
-                divSE("contentHeader","SETUP");
+                divSE("contentHeader","SETUP","",id_setupHeader);
                 divS("setupInfoContainer");
                     divS("setupInfo");
                         divS("setupInfoMatHeadCont");
@@ -680,13 +833,13 @@ function onSectionEnd() //On end of section
                         divE();
 
                         divS("setupInfoWCSCont");
-                            divSE("setupInfoWCS","Work offset: " + formatWorkOfs(cWorkOfs));
+                            divSE("setupInfoWCS","WCS","",id_wcs); //Write wcs ID
                         divE();
 
                         divSE("setupInfoMatHead","SETUP NOTES");
                         divS("setupInfoNotes");
                             writeln("All units are metric. <br/>");
-                            printNotes(); //Print OP notes
+                            for(var i=0;i<nNoteRows;++i) divSE("","","",id_setupNotes[i]); //Write all lines of notes with IDs
                         divE();
                     divE();
                     modelImg(); //Display setup image
@@ -699,6 +852,22 @@ function onSectionEnd() //On end of section
     }
     if(getProperty("writePaths"))
     {
+        //Check if setup is same, if not create new table
+        if(hasParameter("job-description"))
+        {
+            var newSetup=getParameter("job-description");
+            if(lastSetup!=newSetup)
+            {
+                //End last and start new table for next setup
+                lastSetup=newSetup;
+                contentLength+=headPadding;
+
+                tableE();
+                divE();
+                writePathTableHead();
+            }
+        }
+
         //Write Manual nc
         var mncCutof=16; //Cuts of the value after this many charecters
         if(cachedMncCMD.length && !getProperty("hideMnc"))
@@ -715,6 +884,8 @@ function onSectionEnd() //On end of section
                 tableRowS("border-right:1px solid black;");
                     tableCell(textOut);
                 tableRowE();
+
+                incPCellCount();
             }
             //Data has been printed, delete all. 
             cachedMncCMD.length=0;
@@ -740,15 +911,82 @@ function onSectionEnd() //On end of section
             tableCell(feedFormat.format(maxFeedrate));
             tableCell(feedFormat.format(feedPerT));
         tableRowE();
+
+        incPCellCount();
     }
+}
+
+//Write inline script portion
+function htmlScript()
+{
+    writeln("<script>");
+
+    //nSetups
+    if(nSetups>1)
+    {
+        writeln("document.getElementById(\"" + id_setupHeader + "\").textContent=\"" + "SETUP  -  " + nSetups + " TOTAL" + "\";");
+    }
+
+    //WCS
+    var wcsStr="";
+    for(var i=0;i<allWorkOfs.length;++i) wcsStr+=formatWorkOfs(allWorkOfs[i]) + ", ";
+    wcsStr=wcsStr.substring(0,wcsStr.length-2);
+    writeln("document.getElementById(\"" + id_wcs + "\").textContent=\"" + wcsStr + "\";");
+
+    //Op notes
+    if(hasParameter("job-notes"))
+    {
+        //Add together setup notes and split them into rows
+        const allNoteRows=[];
+        for(var i=0;i<globalNotes.length;++i)
+        {
+            //Add split and trimmed note to allnoterows
+            const aSplit=globalNotes[i].split("\n");
+            for(var n=0;n<aSplit.length;++n) allNoteRows.push(aSplit[n].trim());
+        }
+
+        //Check how many rows
+        var rowCount=0;
+        if(allNoteRows.length>nNoteRows) 
+        {
+            allNoteRows[nNoteRows-1]+="..."; //If there are more notes than rows add dots to end
+            rowCount=nNoteRows;
+        }
+        else rowCount=allNoteRows.length;
+        
+        //Print notes
+        for(var i=0;i<rowCount;++i) writeln("document.getElementById(\"" + id_setupNotes[i] + "\").textContent=\"" + allNoteRows[i] + "\";");
+    }
+
+    writeln("</script>");
 }
 
 function onClose() //On close of post
 {
+    if(showDebug)
+    {
+        for(var i=0;i<=paddPaths;++i)
+        {
+        tableRowS();
+            tableCell(((pathCellCount * pathTableCellLen) + contentLength) + "mm");
+            tableCell("DBG");
+            tableCell("DBG");
+            tableCell("DBG");
+            tableCell("DBG");
+            tableCell("DBG");
+            tableCell("DBG");
+            tableCell("DBG");
+        tableRowE();
+
+        incPCellCount();
+        }
+    }
+
     //Close up path table
     tableE();
     divE();
 
+    htmlScript();
     htmlEnd();
 }
 
