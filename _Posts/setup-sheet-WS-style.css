@@ -73,13 +73,6 @@ body {
     flex-grow: 1;
 }
 
-.page-footer {
-    text-align: center;
-    font-size: var(--fontSizeFoot1);
-
-    margin-top: 0mm;
-}
-
 /*Print page settings*/
 @page {
     size: A4;
@@ -328,11 +321,30 @@ table.pathTable tr:nth-child(even)
   width:100%;
 }
 
-.camSysFooter
-{
+.page-footer {
+  display:flex;
+  flex-direction: row;
+  justify-content: center;
+
+  text-align: center;
+  white-space: nowrap;
+
   font-family: var(--font1);
   font-size: var(--fontSizeBody1);
   font-weight:normal;
-  text-align:center;
+
+  margin-top: 0mm;
+}
+
+.footer-info
+{
   padding:10px;
+}
+
+.footer-side
+{  
+  padding:10px;
+  padding-right:0px;
+  text-align:right;
+  width:100%;  
 }
