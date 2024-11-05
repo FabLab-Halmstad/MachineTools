@@ -19,7 +19,7 @@ vendor = "FabLabWS";
 vendorUrl = "hh.se";
 certificationLevel = 2;
 
-longDescription = "FabLab WS Setup-sheet";
+longDescription = "FabLab WS Setup-sheet v2.1";
 
 capabilities = CAPABILITY_SETUP_SHEET;
 extension = "html";
@@ -993,9 +993,12 @@ function onClose() //On close of post
         }
     }
 
-    //Close up path table
-    tableE();
-    divE();
+    //If path table has been written, close up
+    if(getProperty("writePaths"))
+    {
+        tableE();
+        divE();
+    }
 
     //End sheet, write script, end document
     htmlEnd();
