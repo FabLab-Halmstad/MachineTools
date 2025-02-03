@@ -13,11 +13,9 @@
 var globalPostVersion="GV1.0";
 
 description = "HAAS (pre-NGC)";
-vendor = "Haas Automation";
-vendorUrl = "https://www.haascnc.com";
-legal = "Copyright (C) 2012-2020 by Autodesk, Inc.";
+vendor = "FabLabWS";
+vendorUrl = "hh.se";
 certificationLevel = 2;
-minimumRevision = 40783;
 
 longDescription = "HAAS SMM post for WS by Benjamin Solar 2025 " + globalPostVersion;
 

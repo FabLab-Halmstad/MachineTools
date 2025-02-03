@@ -18,11 +18,9 @@ Outputs measure sequence only, if posted in conjunction with other setups will f
 var globalPostVersion="GV1.0";
 
 description = "HAAS (pre-NGC)";
-vendor = "Haas Automation";
-vendorUrl = "https://www.haascnc.com";
-legal = "Copyright (C) 2012-2020 by Autodesk, Inc.";
+vendor = "FabLabWS";
+vendorUrl = "hh.se";
 certificationLevel = 2;
-minimumRevision = 40783;
 
 longDescription = "Outputs measure sequence only " + globalPostVersion;
 
