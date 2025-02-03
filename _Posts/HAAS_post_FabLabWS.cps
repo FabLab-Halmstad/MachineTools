@@ -10,6 +10,8 @@
   FORKID {241E0993-8BE0-463b-8888-47968B9D7F9F}
 */
 
+var globalPostVersion="GV1.0";
+
 description = "HAAS (pre-NGC)";
 vendor = "Haas Automation";
 vendorUrl = "https://www.haascnc.com";
@@ -17,7 +19,7 @@ legal = "Copyright (C) 2012-2020 by Autodesk, Inc.";
 certificationLevel = 2;
 minimumRevision = 40783;
 
-longDescription = "Generic post for use with all common 3-axis HAAS mills like the DM, VF, Office Mill, and Mini Mill series. This post is for the pre-Next Generation Control. By default positioning moves will be output as high feed G1s instead of G0s. You can turn on the property 'useG0' to force G0s but be careful as the CNC will follow a dogleg path rather than a direct path.";
+longDescription = "HAAS SMM post for WS by Benjamin Solar 2025 " + globalPostVersion;
 
 extension = "nc";
 programNameIsInteger = true;
@@ -449,6 +451,9 @@ function onOpen() {
     }
   }
 
+  //Write post version
+  writeComment(globalPostVersion);
+  
   // dump machine configuration
   var vendor = machineConfiguration.getVendor();
   var model = machineConfiguration.getModel();

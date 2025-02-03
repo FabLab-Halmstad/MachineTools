@@ -12,6 +12,8 @@
   Modified by Benjamin Solar 2023
 */
 
+var globalPostVersion="GV1.0";
+
 description = "RaptorX-SL - RS-274D";
 vendor = "Autodesk";
 vendorUrl = "http://www.autodesk.com";
@@ -19,7 +21,7 @@ legal = "Copyright (C) 2012-2016 by Autodesk, Inc.";
 certificationLevel = 2;
 minimumRevision = 24000;
 
-longDescription = "Raptor X-SL post modified by Benjamin Solar for WS";
+longDescription = "Raptor X-SL post for WS by Benjamin Solar 2025 " + globalPostVersion;
 
 extension = "nc";
 setCodePage("ascii");
@@ -175,6 +177,9 @@ function onOpen() {
   if (programComment) {
     writeComment(programComment);
   }
+
+  //Write post version
+  writeComment(globalPostVersion);
 
   // dump machine configuration
   var vendor = machineConfiguration.getVendor();

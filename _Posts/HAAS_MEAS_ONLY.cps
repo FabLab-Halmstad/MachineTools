@@ -15,6 +15,8 @@ Outputs measure sequence only, if posted in conjunction with other setups will f
 --Benjamin Solar 2024
 */
 
+var globalPostVersion="GV1.0";
+
 description = "HAAS (pre-NGC)";
 vendor = "Haas Automation";
 vendorUrl = "https://www.haascnc.com";
@@ -22,7 +24,7 @@ legal = "Copyright (C) 2012-2020 by Autodesk, Inc.";
 certificationLevel = 2;
 minimumRevision = 40783;
 
-longDescription = "Outputs measure sequence only, if posted in conjunction with other setups will filter out the MEAS tag - Benjamin Solar 2024"
+longDescription = "Outputs measure sequence only " + globalPostVersion;
 
 extension = "nc";
 programNameIsInteger = true;
@@ -358,6 +360,9 @@ function onOpen() {
       }
     }
   
+    //Write post version
+    writeComment(globalPostVersion);
+
     // dump machine configuration
     var vendor = machineConfiguration.getVendor();
     var model = machineConfiguration.getModel();
