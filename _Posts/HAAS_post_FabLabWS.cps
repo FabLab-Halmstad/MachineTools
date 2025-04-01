@@ -812,18 +812,18 @@ function parkMsg(msg)
 {
   if(typeof msg === "undefined") msg="Machine parked";
 
-  writeBlock("M09"); //Turn of coolant
-  writeBlock("M05"); //Turn of spindle
-  writeBlock("G90");
-  writeBlock("G53 G00 Z110.0");
-  writeBlock("G53 G00 Y0.0 X-279.0");
+  writeOptionalBlock("M09"); //Turn of coolant
+  writeOptionalBlock("M05"); //Turn of spindle
+  writeOptionalBlock("G90");
+  writeOptionalBlock("G53 G00 Z110.0");
+  writeOptionalBlock("G53 G00 Y0.0 X-279.0");
 
-  writeBlock("M00");
+  writeOptionalBlock("M00");
   writeComment(msg);
-  writeBlock("");
+  writeOptionalBlock("");
 
-  writeBlock("G53 G00 Z0.0");
-  writeBlock(getWOFS());
+  writeOptionalBlock("G53 G00 Z0.0");
+  writeOptionalBlock(getWOFS());
   forceSafe(); //Force tool change on next
 }
 
@@ -940,7 +940,7 @@ function onManualNC(command, value) {
     var commands = String(value).split(",");
     for (value in commands) 
     {
-      writeBlock(commands[value]);
+      writeln(commands[value]); //Formerly writeBlock
     }
 	break;
   }
