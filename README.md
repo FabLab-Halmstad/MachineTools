@@ -1,7 +1,7 @@
 # Machine tools
 HSMWorks posts, tool libraries and other resources
 
-Version: 1.0
+Version: 1.5
 
 Install instructions: https://youtu.be/tPoRc0O1i84
 

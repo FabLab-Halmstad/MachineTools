@@ -15,7 +15,7 @@ Outputs measure sequence only, if posted in conjunction with other setups will f
 --Benjamin Solar 2024
 */
 
-var globalPostVersion="GV1.0";
+var globalPostVersion="GV1.5";
 
 description = "HAAS (pre-NGC)";
 vendor = "FabLabWS";

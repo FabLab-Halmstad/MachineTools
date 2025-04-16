@@ -10,7 +10,7 @@
   FORKID {241E0993-8BE0-463b-8888-47968B9D7F9F}
 */
 
-var globalPostVersion="GV1.0";
+var globalPostVersion="GV1.5";
 
 description = "HAAS (pre-NGC)";
 vendor = "FabLabWS";
@@ -46,7 +46,7 @@ properties = {
   showSequenceNumbers: true, // show sequence numbers
   sequenceNumberStart: 10, // first sequence number
   sequenceNumberIncrement: 5, // increment for sequence numbers
-  sequenceNumberOnlyOnToolChange: false, // only output sequence numbers on tool change
+  sequenceNumberOnlyOnToolChange: true, // only output sequence numbers on tool change
   optionalStop: true, // optional stop
   separateWordsWithSpace: true, // specifies that the words should be separated with a white space
   useRadius: false, // specifies that arcs should be output using the radius (R word) instead of the I, J, and K words.
@@ -1637,6 +1637,16 @@ function onSection() {
     }
   }
   
+  //TODO changelog
+  if(!isFirstSection()) //Force tool change without length comp if same
+  {
+    if(tool.number == getPreviousSection().getTool().number)
+    {
+      writeBlock("T"+tool.number+" M6"+" (SAME TOOL)"); //Tool change
+      writeBlock("M01"); //Optional stop
+    }
+  }
+
   if (insertToolCall || operationNeedsSafeStart) {
     if (insertToolCall) {
       forceWorkPlane();

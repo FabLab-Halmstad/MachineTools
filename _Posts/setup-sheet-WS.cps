@@ -15,7 +15,7 @@
  *
  */
 
-var globalPostVersion="GV1.0";
+var globalPostVersion="GV1.5";
 
 description="Setup-sheet-WS";
 vendor = "FabLabWS";
