@@ -1643,7 +1643,6 @@ function onSection() {
     if(tool.number == getPreviousSection().getTool().number)
     {
       writeBlock("T"+tool.number+" M6"+" (SAME TOOL)"); //Tool change
-      writeBlock("M01"); //Optional stop
     }
   }
 
